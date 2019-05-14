@@ -18,6 +18,14 @@ You can read more about the concepts behind FishStore in our recent [research pa
 
 # Building FishStore
 
+Clone FishStore including submodules:
+
+```sh
+git clone https://github.com/microsoft/FishStore.git
+cd FishStore
+git submodule update --init
+```
+
 FishStore uses CMake for builds. To build it, create
 one or more build directories and use CMake to set up build scripts for your
 target OS. Once CMake has generated the build scripts, it will try to update
