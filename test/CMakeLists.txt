@@ -1,0 +1,19 @@
+if(WIN32)
+  set (FISHSTORE_TEST_LINK_LIBS fishstore rpcrt4 gtest)
+else()
+  set (FISHSTORE_TEST_LINK_LIBS fishstore stdc++fs uuid tbb gcc aio m stdc++ pthread dl gtest)
+endif()
+
+
+#Function to automate building test binaries
+FUNCTION(ADD_FISHSTORE_TEST TEST_NAME HEADERS)
+  add_executable(${TEST_NAME} ${HEADERS} ${TEST_NAME}.cc)
+  target_link_libraries(${TEST_NAME} ${FISHSTORE_TEST_LINK_LIBS} simdjson)
+  add_test(${TEST_NAME} ${CMAKE_BINARY_DIR}/${TEST_NAME})
+ENDFUNCTION()
+
+ADD_FISHSTORE_TEST(in_memory_test "")
+ADD_FISHSTORE_TEST(ingest_queue_test "ingest_test.h")
+if (MSVC)
+ADD_FISHSTORE_TEST(ingest_threadpool_test "ingest_test.h")
+endif()

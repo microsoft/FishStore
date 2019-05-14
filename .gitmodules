@@ -1,0 +1,6 @@
+[submodule "third_party/simdjson"]
+	path = third_party/simdjson
+	url = https://github.com/lemire/simdjson.git
+[submodule "third_party/hopscotch-map"]
+	path = third_party/hopscotch-map
+	url = https://github.com/Tessil/hopscotch-map.git
