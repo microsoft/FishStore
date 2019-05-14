@@ -68,6 +68,14 @@ As of this writing, the required libraries are:
 - stdc++
 - pthread : thread library.
 
+On Ubuntu, you may install dependencies as follows:
+
+```sh
+ sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+ sudo apt update
+ sudo apt install -y g++-7 libaio-dev uuid-dev libtbb-dev
+```
+
 Also, CMake on Linux, for the gcc compiler, generates build scripts for either
 Debug or Release build, but not both; so you'll have to run CMake twice, in two
 different directories, to get both Debug and Release build scripts.
