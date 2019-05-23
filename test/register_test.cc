@@ -225,7 +225,6 @@ TEST(Registration, Register_Concurrent) {
   ASSERT_EQ(res, Status::Pending);
   store.CompletePending(true);
 
-  printf("%u %u\n", context1.get_cnt(), context2.get_cnt());
   ASSERT_EQ(context1.get_cnt(), context2.get_cnt());
 
   actions.clear();
@@ -303,7 +302,6 @@ TEST(Registration, Deregister_Concurrent) {
   ASSERT_EQ(res, Status::Pending);
   store.CompletePending(true);
 
-  printf("%u %u\n", context1.get_cnt(), context2.get_cnt());
   ASSERT_EQ(context1.get_cnt(), context2.get_cnt());
 
   store.StopSession();

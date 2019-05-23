@@ -253,8 +253,7 @@ TEST(CLASS, Checkpoint_Concurrent) {
     char buf[1024];
     bool flag = true;
     for (size_t i = begin_line + serial_num * n_threads; i < n_records; i += n_threads) {
-      auto n = sprintf(buf, "{\"id\": \"%zu\", \"name\": \"name%zu\", \"gender\": \"%s\", \"school\": {\"id\": %zu, \"name\": \"school%zu\"}}",
-        i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
+      auto n = sprintf(buf, pattern, i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
       if (flag) {
         new_store.BatchInsert(buf, n, serial_num, offset);
         flag = false;

@@ -119,7 +119,7 @@ public:
   }
 
   inline void Finalize() {
-    printf("%u record has been touched...\n", cnt);
+    ASSERT_EQ(cnt, expected);
   }
 
   inline bool check(const char* payload, uint32_t payload_size) {
