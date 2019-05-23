@@ -931,10 +931,6 @@ inline uint32_t FishStore<D, A>::BatchInsert(const char* data, size_t length,
   // Finish preparing insert contexts, start populating the store.
   uint32_t op_cnt = 0;
   for(auto& insert_context : insert_contexts) {
-    // Refresh periodically.
-    if(op_cnt % Constants::kRefreshRate == 0) {
-      Refresh();
-    }
     auto callback = [](IAsyncContext* ctxt, Status result) {
       CallbackContext<RecordInsertContext> context{ctxt};
       assert(result == Status::Ok);
@@ -954,7 +950,7 @@ inline uint32_t FishStore<D, A>::BatchInsert(const char* data, size_t length,
     assert(status == Status::Ok || status == Status::Pending);
     ++op_cnt;
   }
-  CompletePending(true);
+  //CompletePending(true);
 
 #ifdef _TIMER
   auto t_end = std::chrono::high_resolution_clock::now();

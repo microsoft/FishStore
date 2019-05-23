@@ -16,15 +16,12 @@ struct Constants {
   /// Size of cache line in bytes
   static constexpr uint32_t kCacheLineBytes = 64;
 
-  /// Default refresh rate, every 256 records.
-  static constexpr uint32_t kRefreshRate = 256;
-
   /// We issue 256 writes to disk, to checkpoint the hash table.
   static constexpr uint32_t kNumMergeChunks = 256;
 
   // Default batch size for reserving space in batch insert.
   // Reserve this much batch size for the vector of insert contexts;
-  static constexpr size_t kDefaultBatchSize = 2048;
+  static constexpr size_t kDefaultBatchSize = 1;
 
   /// Utilities for Adaptive prefecthing.
   // Total number of IO levels.

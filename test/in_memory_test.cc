@@ -20,6 +20,9 @@ using store_t = FishStore<disk_t, adaptor_t>;
 const size_t n_records = 1000000;
 const size_t n_threads = 4;
 
+const char* pattern =
+  "{\"id\": \"%zu\", \"name\": \"name%zu\", \"gender\": \"%s\", \"school\": {\"id\": \"%zu\", \"name\": \"school%zu\"}}";
+
 class JsonGeneralScanContext : public IAsyncContext {
 public:
   JsonGeneralScanContext(uint16_t psf_id, const char* value, uint32_t expected)
@@ -169,12 +172,28 @@ TEST(InMemFishStore, Ingest_Serial) {
 
   store.CompleteAction(true);
   size_t cnt = 0;
+  size_t op_cnt = 0;
   char buf[1024];
   for (size_t i = 0; i < n_records; ++i) {
-    auto n = sprintf(buf, "{\"id\": \"%zu\", \"name\": \"name%zu\", \"gender\": \"%s\", \"school\": {\"id\": %zu, \"name\": \"school%zu\"}}",
-      i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
+    auto n = sprintf(buf, pattern, i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
     cnt += store.BatchInsert(buf, n, 0);
+    ++op_cnt;
+    if (op_cnt % 256 == 0) store.Refresh();
   }
+
+  auto callback = [](IAsyncContext* ctxt, Status result) {
+    ASSERT_EQ(result, Status::Ok);
+  };
+
+  JsonGeneralScanContext context1{ id_proj, "1234", 1 };
+  auto res = store.Scan(context1, callback, 0);
+  ASSERT_EQ(res, Status::Ok);
+  store.CompletePending();
+
+  JsonGeneralScanContext context2{ gender_proj, "male", n_records / 2 };
+  res = store.Scan(context2, callback, 0);
+  ASSERT_EQ(res, Status::Ok);
+  store.CompletePending();
 
   actions.clear();
   actions.push_back({ DEREGISTER_GENERAL_PSF, id_proj });
@@ -212,13 +231,15 @@ TEST(InMemFishStore, Ingest_Concurrent) {
     thds.emplace_back([&store, &cnt](size_t start) {
       store.StartSession();
       char buf[1024];
+      size_t op_cnt = 0;
       for (size_t i = start; i < n_records; i += n_threads) {
-        auto n = sprintf(buf, "{\"id\": \"%zu\", \"name\": \"name%zu\", \"gender\": \"%s\", \"school\": {\"id\": %zu, \"name\": \"school%zu\"}}",
-          i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
+        auto n = sprintf(buf, pattern, i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
         cnt += store.BatchInsert(buf, n, 0);
+        ++op_cnt;
+        if (op_cnt % 256 == 0) store.Refresh();
       }
       store.StopSession();
-      }, i);
+    }, i);
   }
 
   for (auto& thd : thds) {
@@ -237,7 +258,7 @@ TEST(InMemFishStore, Ingest_Concurrent) {
   store.CompletePending();
 
   JsonGeneralScanContext context2{ gender_proj, "male", n_records / 2 };
-  store.Scan(context2, callback, 0);
+  res = store.Scan(context2, callback, 0);
   ASSERT_EQ(res, Status::Ok);
   store.CompletePending();
 
@@ -276,13 +297,15 @@ TEST(InMemFishStore, FullScan) {
     thds.emplace_back([&store, &cnt](size_t start) {
       store.StartSession();
       char buf[1024];
+      size_t op_cnt = 0;
       for (size_t i = start; i < n_records; i += n_threads) {
-        auto n = sprintf(buf, "{\"id\": \"%zu\", \"name\": \"name%zu\", \"gender\": \"%s\", \"school\": {\"id\": %zu, \"name\": \"school%zu\"}}",
-          i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
+        auto n = sprintf(buf, pattern, i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
         cnt += store.BatchInsert(buf, n, 0);
+        ++op_cnt;
+        if (op_cnt % 256 == 0) store.Refresh();
       }
       store.StopSession();
-      }, i);
+    }, i);
   }
 
   for (auto& thd : thds) {
@@ -301,7 +324,7 @@ TEST(InMemFishStore, FullScan) {
   store.CompletePending();
 
   JsonFullScanContext context2{ {"gender"}, fishstore::core::projection<adaptor_t>, "male", n_records / 2 };
-  store.FullScan(context2, callback, 0);
+  res = store.FullScan(context2, callback, 0);
   ASSERT_EQ(res, Status::Ok);
   store.CompletePending();
 

@@ -272,7 +272,6 @@ int main(int argc, char* argv[]) {
         assert(false);
       };
       store.Refresh();
-      uint32_t op_cnt = 0;
       uint64_t serial_num = 0;
       for(size_t i = begin_line; i < batch_end; i += n_threads) {
         auto res = store.BatchInsert(batches[i], serial_num);
@@ -280,7 +279,6 @@ int main(int argc, char* argv[]) {
         record_ingested.fetch_add(res);
         store.Refresh();
         ++serial_num;
-        ++op_cnt;
       }
       store.CompleteAction(true);
       store.StopSession();

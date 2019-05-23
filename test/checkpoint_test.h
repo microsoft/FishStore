@@ -10,9 +10,10 @@ using store_t = FishStore<disk_t, adaptor_t>;
 
 const size_t n_records = 1500000;
 const size_t n_threads = 4;
-
 const char* pattern =
   "{\"id\": \"%zu\", \"name\": \"name%zu\", \"gender\": \"%s\", \"school\": {\"id\": \"%zu\", \"name\": \"school%zu\"}}";
+
+Guid log_token, index_token;
 
 class JsonGeneralScanContext : public IAsyncContext {
 public:
@@ -155,64 +156,11 @@ private:
   const char* value_;
 };
 
-TEST(CLASS, Ingest_Serial) {
+TEST(CLASS, Checkpoint_Concurrent) {
   std::experimental::filesystem::remove_all("test");
   std::experimental::filesystem::create_directories("test");
-  store_t store{ 8192, 201326592, "test", 0.4 };
-  store.StartSession();
-  auto id_proj = store.MakeProjection("id");
-  auto gender_proj = store.MakeProjection("gender");
-  std::vector<ParserAction> actions;
-  actions.push_back({ REGISTER_GENERAL_PSF, id_proj });
-  actions.push_back({ REGISTER_GENERAL_PSF, gender_proj });
-  uint64_t safe_register_address, safe_unregister_address;
-  safe_unregister_address = store.ApplyParserShift(
-    actions, [&safe_register_address](uint64_t safe_address) {
-      safe_register_address = safe_address;
-    });
+  std::vector<Guid> guids(n_threads);
 
-  store.CompleteAction(true);
-  size_t cnt = 0;
-  size_t op_cnt = 0;
-  char buf[1024];
-  for (size_t i = 0; i < n_records; ++i) {
-    auto n = sprintf(buf, pattern, i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
-    cnt += store.BatchInsert(buf, n, 0);
-    ++op_cnt;
-    if (op_cnt % 256 == 0) store.Refresh();
-  }
-
-  actions.clear();
-  actions.push_back({ DEREGISTER_GENERAL_PSF, id_proj });
-  actions.push_back({ DEREGISTER_GENERAL_PSF, gender_proj });
-  safe_unregister_address = store.ApplyParserShift(
-    actions, [&safe_register_address](uint64_t safe_address) {
-      safe_register_address = safe_address;
-    });
-
-  auto callback = [](IAsyncContext* ctxt, Status result) {
-    ASSERT_EQ(result, Status::Ok);
-  };
-
-  JsonGeneralScanContext context1{ id_proj, "1234", 1 };
-  auto res = store.Scan(context1, callback, 0);
-  ASSERT_EQ(res, Status::Pending);
-  store.CompletePending();
-
-  JsonGeneralScanContext context2{ gender_proj, "male", n_records / 2 };
-  res = store.Scan(context2, callback, 0);
-  ASSERT_EQ(res, Status::Pending);
-  store.CompletePending();
-
-  store.CompleteAction(true);
-
-  store.StopSession();
-  ASSERT_EQ(cnt, n_records);
-}
-
-TEST(CLASS, Ingest_Concurrent) {
-  std::experimental::filesystem::remove_all("test");
-  std::experimental::filesystem::create_directories("test");
   {
     store_t store{ 8192, 201326592, "test", 0.4 };
     store.StartSession();
@@ -229,42 +177,47 @@ TEST(CLASS, Ingest_Concurrent) {
 
     store.CompleteAction(true);
 
+    static auto checkpoint_callback = [](Status result) {
+      ASSERT_EQ(result, Status::Ok);
+    };
+
+    static auto hybrid_log_persistence_callback =
+      [](Status result, uint64_t persistent_serial_num, uint32_t persistent_offset) {
+      ASSERT_EQ(result, Status::Ok);
+    };
+
+
     std::atomic_size_t cnt{ 0 };
     std::vector<std::thread> thds;
     for (size_t i = 0; i < n_threads; ++i) {
-      thds.emplace_back([&store, &cnt](size_t start) {
-        store.StartSession();
+      thds.emplace_back([&store, &cnt, &guids](size_t start) {
+        guids[start] = store.StartSession();
         char buf[1024];
+        uint64_t serial_num = 0;
         size_t op_cnt = 0;
         for (size_t i = start; i < n_records; i += n_threads) {
           auto n = sprintf(buf, pattern, i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
-          cnt += store.BatchInsert(buf, n, 0);
+          cnt += store.BatchInsert(buf, n, serial_num);
           ++op_cnt;
           if (op_cnt % 256 == 0) store.Refresh();
+          ++serial_num;
         }
         store.StopSession();
       }, i);
     }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    store.CheckpointIndex(checkpoint_callback, index_token);
+    store.CompleteAction(true);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    store.CheckpointHybridLog(hybrid_log_persistence_callback, log_token);
+    store.CompleteAction(true);
 
     for (auto& thd : thds) {
       thd.join();
     }
 
     ASSERT_EQ(cnt, n_records);
-
-    auto callback = [](IAsyncContext* ctxt, Status result) {
-      ASSERT_EQ(result, Status::Ok);
-    };
-
-    JsonGeneralScanContext context1{ id_proj, "1234", 1 };
-    auto res = store.Scan(context1, callback, 0);
-    ASSERT_EQ(res, Status::Pending);
-    store.CompletePending(true);
-
-    JsonGeneralScanContext context2{ gender_proj, "male", n_records / 2 };
-    res = store.Scan(context2, callback, 0);
-    ASSERT_EQ(res, Status::Pending);
-    store.CompletePending(true);
 
     actions.clear();
     actions.push_back({ DEREGISTER_GENERAL_PSF, id_proj });
@@ -278,73 +231,74 @@ TEST(CLASS, Ingest_Concurrent) {
 
     store.StopSession();
   }
-}
 
-TEST(CLASS, FullScan) {
-  std::experimental::filesystem::remove_all("test");
-  std::experimental::filesystem::create_directories("test");
-  store_t store{ 8192, 201326592, "test", 0.4 };
-  store.StartSession();
-  auto id_proj = store.MakeProjection("id");
-  auto gender_proj = store.MakeProjection("gender");
-  std::vector<ParserAction> actions;
-  actions.push_back({ REGISTER_GENERAL_PSF, id_proj });
-  actions.push_back({ REGISTER_GENERAL_PSF, gender_proj });
-  uint64_t safe_register_address, safe_unregister_address;
-  safe_unregister_address = store.ApplyParserShift(
-    actions, [&safe_register_address](uint64_t safe_address) {
-      safe_register_address = safe_address;
-    });
+  store_t new_store{ 8192, 201326592, "test", 0.4 };
+  uint32_t version;
+  std::vector<Guid> recovered_session_ids;
+  new_store.Recover(index_token, log_token, version, recovered_session_ids);
 
-  store.CompleteAction(true);
-
-  std::atomic_size_t cnt{ 0 };
+  new_store.StartSession();
+  std::vector<std::pair<uint64_t, uint32_t>> sessions(n_threads);
   std::vector<std::thread> thds;
-  for (size_t i = 0; i < n_threads; ++i) {
-    thds.emplace_back([&store, &cnt](size_t start) {
-      store.StartSession();
-      char buf[1024];
-      size_t op_cnt = 0;
-      for (size_t i = start; i < n_records; i += n_threads) {
-        auto n = sprintf(buf, pattern, i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
-        cnt += store.BatchInsert(buf, n, 0);
-        ++op_cnt;
-        if (op_cnt % 256 == 0) store.Refresh();
+  auto new_worker_thd = [&](int thread_no) {
+    uint64_t serial_num;
+    uint32_t offset;
+    std::tie(serial_num, offset) = new_store.ContinueSession(guids[thread_no]);
+    size_t begin_line = thread_no;
+    auto callback = [](IAsyncContext* ctxt, Status result) {
+      assert(false);
+    };
+    new_store.Refresh();
+    uint32_t op_cnt = 0;
+    char buf[1024];
+    bool flag = true;
+    for (size_t i = begin_line + serial_num * n_threads; i < n_records; i += n_threads) {
+      auto n = sprintf(buf, "{\"id\": \"%zu\", \"name\": \"name%zu\", \"gender\": \"%s\", \"school\": {\"id\": %zu, \"name\": \"school%zu\"}}",
+        i, i, (i % 2) ? "male" : "female", i % 10, i % 10);
+      if (flag) {
+        new_store.BatchInsert(buf, n, serial_num, offset);
+        flag = false;
       }
-      store.StopSession();
-    }, i);
-  }
-
-  for (auto& thd : thds) {
-    thd.join();
-  }
-
-  actions.clear();
-  actions.push_back({ DEREGISTER_GENERAL_PSF, id_proj });
-  actions.push_back({ DEREGISTER_GENERAL_PSF, gender_proj });
-  safe_unregister_address = store.ApplyParserShift(
-    actions, [&safe_register_address](uint64_t safe_address) {
-      safe_register_address = safe_address;
-    });
-
-  store.CompleteAction(true);
-
-
-  auto callback = [](IAsyncContext * ctxt, Status result) {
-    ASSERT_EQ(result, Status::Ok);
+      else {
+        new_store.BatchInsert(buf, n, serial_num);
+      }
+      ++op_cnt;
+      if (op_cnt % 256 == 0) new_store.Refresh();
+      ++serial_num;
+    }
+    new_store.CompleteAction(true);
+    new_store.StopSession();
   };
 
-  JsonFullScanContext context1{ {"id"}, fishstore::core::projection<adaptor_t>, "1234", 1 };
-  auto res = store.FullScan(context1, callback, 0);
-  ASSERT_EQ(res, Status::Pending);
-  store.CompletePending(true);
+  for (int i = 0; i < n_threads; ++i) {
+    thds.emplace_back(std::thread(new_worker_thd, i));
+  }
 
-  JsonFullScanContext context2{ {"gender"}, fishstore::core::projection<adaptor_t>, "male", n_records / 2 };
-  res = store.FullScan(context2, callback, 0);
-  ASSERT_EQ(res, Status::Pending);
-  store.CompletePending(true);
+  for (int i = 0; i < n_threads; ++i) {
+    thds[i].join();
+  }
 
-  store.StopSession();
+  auto callback = [](IAsyncContext* ctxt, Status result) {
+    ASSERT_EQ(result, Status::Ok);
+  };
+  JsonGeneralScanContext context2{ 1, "male", n_records / 2 };
+  auto res = new_store.Scan(context2, callback, 0);
+  ASSERT_EQ(res, Status::Pending);
+  new_store.CompletePending(true);
+
+  std::vector<ParserAction> actions;
+  uint64_t safe_register_address, safe_unregister_address;
+  actions.push_back({ DEREGISTER_GENERAL_PSF, 0 });
+  actions.push_back({ DEREGISTER_GENERAL_PSF, 1 });
+  safe_unregister_address = new_store.ApplyParserShift(
+    actions, [&safe_register_address](uint64_t safe_address) {
+    safe_register_address = safe_address;
+  });
+
+  new_store.CompleteAction(true);
+
+  new_store.StopSession();
 }
+
 
 
