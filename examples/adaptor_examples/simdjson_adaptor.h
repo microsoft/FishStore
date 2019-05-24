@@ -285,7 +285,6 @@ private:
 class SIMDJsonAdaptor: public JsonAdaptor {
 public:
   typedef SIMDJsonParser parser_t;
-  typedef SIMDJsonRecord record_t;
   typedef SIMDJsonField field_t;
 
   inline static parser_t* NewParser(const std::vector<std::string>& fields) {

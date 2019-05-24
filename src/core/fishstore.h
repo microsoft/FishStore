@@ -872,7 +872,7 @@ inline uint32_t FishStore<D, A>::BatchInsert(const char* data, size_t length,
       //Get the benefit of inlining....
       if (psf.lib_id == -1) res = projection<A>(psf_args);
       else res = psf.eval_(psf_args);
-      if (res.isNull) continue;
+      if (res.is_null) continue;
 
       hash = Utility::HashBytesWithPSFID(general_psf_id, res.payload, res.size);
       value_size = res.size;
@@ -911,7 +911,7 @@ inline uint32_t FishStore<D, A>::BatchInsert(const char* data, size_t length,
 
       if(!flag) {
         NullableInt res = psf.eval_(psf_args);
-        if(!res.isNull) {
+        if(!res.is_null) {
           kpts.emplace_back(KPTUtil{inline_psf_id, res.value});
         }
       }

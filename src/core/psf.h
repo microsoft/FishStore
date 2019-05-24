@@ -9,14 +9,14 @@ namespace fishstore {
 namespace core {
 
 struct NullableInt {
-  bool isNull;
+  bool is_null;
   int32_t value;
 };
 
 static_assert(sizeof(NullableInt) == 8, "sizeof(PSFRetValue) != 8");
 
 struct NullableStringRef {
-  bool isNull = true;
+  bool is_null = true;
   bool need_free = false;
   uint32_t size = 0;
   const char* payload = nullptr;

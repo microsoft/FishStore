@@ -135,7 +135,7 @@ public:
       args.emplace_back(it->second);
     }
     auto res = eval_(args);
-    if (res.isNull) return false;
+    if (res.is_null) return false;
     bool pass = (res.size == value_size_ && !strncmp(res.payload, value_, value_size_));
     if (res.need_free) delete res.payload;
     return pass;

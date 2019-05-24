@@ -10,9 +10,6 @@ its goals, FishStore leverages and extends the FASTER hash key-value store, and 
 parser interface for fast parsing (we use [simdjson](https://github.com/lemire/simdjson) in many of 
 our examples).
 
-
-# Getting Started
-
 You can read more about the concepts behind FishStore in our recent [research paper](https://badrish.net/papers/fishstore-sigmod19.pdf).
 
 
@@ -87,7 +84,7 @@ From "build/Debug", run:
 cmake -DCMAKE_BUILD_TYPE=Debug ../..
 ```
 
---and from "build/Release", run:
+and from "build/Release", run:
 
 ```sh
 cmake -DCMAKE_BUILD_TYPE=Release ../..
@@ -100,6 +97,14 @@ relevant build directory.
 
 You can try other generators (compilers) supported by CMake. The main CMake
 build script is the CMakeLists.txt located in the root directory.
+
+# Extensions
+
+FishStore is a general storage layer upporting different input data formats and general PSFs. Specificallly, users can extend FishStore by implemeneting their own parser adaptors and PSF libaries, for more details please refer to:
+
+* [Extending FishStore with Parser Adaptors](example/adaptor_examples/README.md)
+* [Composing PSF Libraries](examples/lib_examples/README.md) 
+
 
 # Submodules
 
