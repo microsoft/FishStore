@@ -7,9 +7,6 @@ jobs:
   strategy:
     maxParallel: 2
     matrix:
-      x64-Debug:
-        buildPlatform: 'x64'
-        buildConfiguration: 'Debug'
       x64-Release:
         buildPlatform: 'x64'
         buildConfiguration: 'Release'
@@ -46,10 +43,11 @@ jobs:
   - script: |
       export CXX='g++-7'
       mkdir -p build/Debug build/Release
-      cd build/Debug
-      cmake -DCMAKE_BUILD_TYPE=Debug ..
-      make -j
-      cd ../build/Release
+      cd build/Release
       cmake -DCMAKE_BUILD_TYPE=Release ..
       make -j
+      ./in_memory_test
+      ./ingest_queue_test
+      ./register_test
+      ./checkpoint_queue_test
     displayName: 'Compile'
