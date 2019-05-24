@@ -4,11 +4,11 @@ else()
   set (FISHSTORE_TEST_LINK_LIBS fishstore stdc++fs uuid tbb gcc aio m stdc++ pthread dl gtest)
 endif()
 
-
 #Function to automate building test binaries
 FUNCTION(ADD_FISHSTORE_TEST TEST_NAME HEADERS)
   add_executable(${TEST_NAME} ${HEADERS} ${TEST_NAME}.cc)
   target_link_libraries(${TEST_NAME} ${FISHSTORE_TEST_LINK_LIBS} simdjson)
+  target_compile_options(${TEST_NAME} PRIVATE -UNDEBUG)
   add_test(${TEST_NAME} ${CMAKE_BINARY_DIR}/${TEST_NAME})
 ENDFUNCTION()
 
