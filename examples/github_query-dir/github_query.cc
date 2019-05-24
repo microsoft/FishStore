@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) {
   SetThreadAffinity(n_threads);
   store.StartSession();
 
-  auto lib_id = store.LoadPSFLibrary("../../Release/github_lib.dll");
+  auto lib_id = store.LoadPSFLibrary("github_lib.dll");
   auto id_proj = store.MakeProjection("id");
   auto actor_id_proj = store.MakeInlinePSF({ "actor.id" }, lib_id, "int_projection");
   auto repo_id_proj = store.MakeInlinePSF({ "repo.id" }, lib_id, "int_projection");

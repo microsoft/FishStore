@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) {
   SetThreadAffinity(n_threads);
   store.StartSession();
 
-  auto lib_id = store.LoadPSFLibrary("../../Release/twitter_lib.dll");
+  auto lib_id = store.LoadPSFLibrary("twitter_lib.dll");
   auto id_proj = store.MakeProjection("id");
   auto user_id_proj = store.MakeProjection("user.id");
   auto reply_status_id_proj = store.MakeProjection("in_reply_to_status_id");
