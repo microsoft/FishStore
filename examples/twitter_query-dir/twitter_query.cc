@@ -167,14 +167,12 @@ void SetThreadAffinity(size_t core) {
 }
 
 int main(int argc, char* argv[]) {
-  if (argc != 5) {
-    printf(
-      "Usage: ./github_ingest <input_file> <n_threads> <memory_buget> "
-      "<store_target>\n");
+  if (argc != 6) {
+    printf( "Usage: ./twitter_query <input_file> <lib_file> <n_threads> <memory_buget> <store_target>\n");
     return -1;
   }
 
-  int n_threads = atoi(argv[2]);
+  int n_threads = atoi(argv[3]);
   std::ifstream fin(argv[1]);
   std::vector<std::string> batches;
   const uint32_t json_batch_size = 1;
@@ -200,14 +198,14 @@ int main(int argc, char* argv[]) {
   printf("Finish loading %u batches (%zu records) of json into the memory....\n",
     json_batch_cnt, record_cnt);
 
-  std::experimental::filesystem::create_directory(argv[4]);
-  size_t store_size = 1LL << atoi(argv[3]);
-  store_t store{ (1L << 24), store_size, argv[4] };
+  std::experimental::filesystem::create_directory(argv[5]);
+  size_t store_size = 1LL << atoi(argv[4]);
+  store_t store{ (1L << 24), store_size, argv[5] };
 
   SetThreadAffinity(n_threads);
   store.StartSession();
 
-  auto lib_id = store.LoadPSFLibrary("twitter_lib.dll");
+  auto lib_id = store.LoadPSFLibrary(argv[2]);
   auto id_proj = store.MakeProjection("id");
   auto user_id_proj = store.MakeProjection("user.id");
   auto reply_status_id_proj = store.MakeProjection("in_reply_to_status_id");
@@ -249,13 +247,16 @@ int main(int argc, char* argv[]) {
       assert(false);
     };
     store.Refresh();
-    uint32_t op_cnt = 0;
+    size_t op_cnt = 0;
     for (size_t i = begin_line; i < batch_end; i += n_threads) {
       auto res = store.BatchInsert(batches[i], 1);
       bytes_ingested.fetch_add(batches[i].size());
       record_ingested.fetch_add(res);
-      store.Refresh();
-      ++op_cnt;
+      op_cnt += res;
+      if (op_cnt % 256 == 0) {
+        store.Refresh();
+        op_cnt = 0;
+      }
     }
     store.CompletePending();
     store.StopSession();

@@ -16,6 +16,8 @@ typedef fishstore::device::NullDisk disk_t;
 typedef fishstore::adaptor::SIMDJsonAdaptor adaptor_t;
 using store_t = fishstore::core::FishStore<disk_t, adaptor_t>;
 
+std::unordered_map<std::string, uint16_t> field_ids;
+
 class JsonGeneralScanContext : public IAsyncContext {
 public:
   JsonGeneralScanContext(uint16_t psf_id, const char* value)
@@ -175,7 +177,7 @@ void SetThreadAffinity(size_t core) {
 
 int main(int argc, char* argv[]) {
   if (argc != 5) {
-    printf("Usage: ./online_demo_disk <input_file> <n_threads> <memory_buget> <store_target>\n");
+    printf("Usage: ./online_demo <input_file> <n_threads> <memory_buget> <store_target>\n");
     return -1;
   }
 
@@ -224,9 +226,15 @@ int main(int argc, char* argv[]) {
     auto callback = [](IAsyncContext * ctxt, Status result) {
       assert(false);
     };
+    size_t cnt = 0;
     while (!finish) {
       for (size_t i = begin_line; i < batch_end; i += n_threads) {
         auto res = store.BatchInsert(batches[i], 1);
+        cnt += res;
+        if (cnt % 256 == 0) {
+          store.Refresh();
+          cnt = 0;
+        }
         bytes_ingested.fetch_add(batches[i].size());
         record_ingested.fetch_add(res);
         if (finish) break;
@@ -243,7 +251,6 @@ int main(int argc, char* argv[]) {
 
   double current_throughput = 0.0;
   std::thread timer([&n_threads, &finish, &bytes_ingested, &record_ingested, &current_throughput]() {
-    //FILE* fp = fopen("throughput.out", "w");
     SetThreadAffinity(n_threads + 1);
     uint64_t last_bytes = 0;
     uint32_t last_records = 0;
@@ -252,13 +259,10 @@ int main(int argc, char* argv[]) {
       uint64_t current_bytes = bytes_ingested.load();
       uint32_t current_records = record_ingested.load();
       current_throughput = (double)(current_bytes - last_bytes) / 1024.0 / 1024.0;
-      //fprintf(fp, "Throughput: %.6lf MB/s,  %u records/s\n",
-      //        current_throughput, current_records - last_records);
       last_bytes = current_bytes;
       last_records = current_records;
     }
-    //fclose(fp);
-    });
+  });
 
   static auto callback = [](IAsyncContext * ctxt, Status result) {
     assert(result == Status::Ok);
@@ -275,7 +279,13 @@ int main(int argc, char* argv[]) {
     if (op == "reg-field") {
       std::string field_name;
       std::cin >> field_name;
-      uint16_t field_id = store.MakeProjection(field_name);
+      auto it = field_ids.find(field_name);
+      uint16_t field_id;
+      if (it == field_ids.end()) {
+        field_id = store.MakeProjection(field_name);
+        field_ids[field_name] = field_id;
+      }
+      else field_id = it->second;
       parser_actions.clear();
       parser_actions.push_back({ REGISTER_GENERAL_PSF, field_id });
       safe_unregister_address = store.ApplyParserShift(
@@ -283,12 +293,18 @@ int main(int argc, char* argv[]) {
           safe_register_address = safe_address;
         });
       store.CompleteAction(true);
-      printf("Finish registering field projection PSF `%s` with PSF ID %u, start indexing from address %zu...\n",
-        field_name.c_str(), field_id, safe_register_address);
+      printf("Finish registering field projection PSF on field `%s`, start indexing from address %zu...\n",
+        field_name.c_str(), safe_register_address);
     }
     else if (op == "dereg-field") {
-      uint16_t field_id;
-      std::cin >> field_id;
+      std::string field_name;
+      std::cin >> field_name;
+      auto it = field_ids.find(field_name);
+      if (it == field_ids.end()) {
+        printf("FIeld %s has never been registered...\n", field_name.c_str());
+        continue;
+      }
+      uint16_t field_id = it->second;
       parser_actions.clear();
       parser_actions.push_back({ DEREGISTER_GENERAL_PSF, field_id });
       safe_unregister_address = store.ApplyParserShift(
@@ -296,8 +312,8 @@ int main(int argc, char* argv[]) {
           safe_register_address = safe_address;
         });
       store.CompleteAction(true);
-      printf("Finish deregistering field projection PSF with ID %u, stop indexing from address %zu...\n",
-        field_id, safe_unregister_address);
+      printf("Finish deregistering field projection PSF on field %s, stop indexing from address %zu...\n",
+        field_name.c_str(), safe_unregister_address);
     }
     else if (op == "load-lib") {
       std::string lib_path;
@@ -329,6 +345,19 @@ int main(int argc, char* argv[]) {
       printf("Finish registering Inline PSF `%s` from library %zu with filter ID %u, start indexing from address %zu...\n",
         func_name.c_str(), lib_id, psf_id, safe_register_address);
     }
+    else if (op == "rereg-filter") {
+      uint32_t psf_id;
+      std::cin >> psf_id;
+      parser_actions.clear();
+      parser_actions.push_back({ REGISTER_INLINE_PSF, psf_id });
+      safe_unregister_address = store.ApplyParserShift(
+        parser_actions, [&safe_register_address](uint64_t safe_address) {
+        safe_register_address = safe_address;
+      });
+      store.CompleteAction(true);
+      printf("Finish registering filter PSF %u, start indexing from address %zu...\n",
+        psf_id, safe_unregister_address);
+    }
     else if (op == "dereg-filter") {
       uint32_t psf_id;
       std::cin >> psf_id;
@@ -345,29 +374,33 @@ int main(int argc, char* argv[]) {
     else if (op == "scan") {
       std::string type;
       std::cin >> type;
-      if (type == "inline") {
+      if (type == "filter") {
         uint32_t psf_id;
-        int32_t value;
-        std::cin >> psf_id >> value;
-        JsonInlineScanContext context{ psf_id, value };
+        std::cin >> psf_id;
+        JsonInlineScanContext context{ psf_id, 1 };
         auto begin = std::chrono::high_resolution_clock::now();
         auto status = store.Scan(context, callback, 1);
         store.CompletePending(true);
         auto end = std::chrono::high_resolution_clock::now();
-        printf("Finish index scan on PSF #%u = %u in %.6f sec...\n", psf_id, value,
+        printf("Finish index scan on filter #%u in %.6f sec...\n", psf_id,
           std::chrono::duration<double>(end - begin).count());
       }
-      else if (type == "general") {
-        uint16_t field_id;
-        std::string value;
-        std::cin >> field_id >> value;
+      else if (type == "field") {
+        std::string field_name, value;
+        std::cin >> field_name >> value;
+        auto it = field_ids.find(field_name);
+        if (it == field_ids.end()) {
+          printf("FIeld %s has never been registered...\n", field_name.c_str());
+          continue;
+        }
+        uint16_t field_id = it->second;
         JsonGeneralScanContext context{ field_id, value };
         auto begin = std::chrono::high_resolution_clock::now();
         auto status = store.Scan(context, callback, 1);
         store.CompletePending(true);
         auto end = std::chrono::high_resolution_clock::now();
-        printf("Finish index scan on field #%u with value `%s` in %.6f sec...\n",
-          field_id, value.c_str(), std::chrono::duration<double>(end - begin).count());
+        printf("Finish index scan on field `%s == %s` in %.6f sec...\n",
+          field_name.c_str(), value.c_str(), std::chrono::duration<double>(end - begin).count());
       }
       else {
         printf("Scan type need to be either field or filter...\n");
@@ -389,9 +422,10 @@ int main(int argc, char* argv[]) {
       printf(
         "Possible Commands:\n"
         "reg-field <field_name>                                       Register a field projection PSF on <field_name>.\n"
-        "dereg-field <field_id>                                       Deregister a field projection PSF on <field_name>.\n"
+        "dereg-field <field_name>                                     Deregister a field projection PSF on <field_name>.\n"
         "load-lib <path>                                              Load a PSF Library from <path>.\n"
         "reg-filter <lib_id> <func_name> <n_fields> <fields>...       Register a filter PSF <func_name> in Library <lib_id> defined over <fields>.\n"
+        "rereg-filter <filter_id>                                     Reregister a filter PSF <func_name> in Library <lib_id> defined over <fields>.\n"
         "dereg-filter <filter_id>                                     Deregister the filter PSF with ID <filter_id>.\n"
         "scan filter <filter_id>                                      Do an index scan over Filter PSF #<filter_id>.\n"
         "scan field <field_name> <value>                              Do an index scan over field <field_name> (need to be registered) over <value>.\n"

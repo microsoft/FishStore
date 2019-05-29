@@ -174,12 +174,11 @@ void SetThreadAffinity(size_t core) {
 int main(int argc, char* argv[]) {
   if(argc != 6) {
     printf(
-      "Usage: ./checkpoint_recovery <input_file> <n_threads> <memory_buget> "
-      "<store_target> <hash_table_size>\n");
+      "Usage: ./checkpoint_recovery <input_file> <lib_file> <n_threads> <memory_buget> <store_target>\n");
     return -1;
   }
 
-  int n_threads = atoi(argv[2]);
+  int n_threads = atoi(argv[3]);
   std::vector<Guid> guids(n_threads);
   std::ifstream fin(argv[1]);
   std::vector<std::string> batches;
@@ -210,16 +209,16 @@ int main(int argc, char* argv[]) {
     "Finish loading %u batches (%zu records) of json into the memory....\n",
     json_batch_cnt, record_cnt);
 
-  std::experimental::filesystem::create_directory(argv[4]);
-  size_t store_size = 1LL << atoi(argv[3]);
-  size_t hash_table_size = 1LL << atoi(argv[5]);
+  std::experimental::filesystem::create_directory(argv[5]);
+  size_t store_size = 1LL << atoi(argv[4]);
+  size_t hash_table_size = 1LL << 24;
   {
-    store_t store{hash_table_size, store_size, argv[4]};
+    store_t store{hash_table_size, store_size, argv[5]};
 
     SetThreadAffinity(n_threads);
     store.StartSession();
 
-    auto lib_id = store.LoadPSFLibrary("github_lib.dll");
+    auto lib_id = store.LoadPSFLibrary(argv[2]);
     auto id_proj = store.MakeProjection("id");
     auto actor_id_proj = store.MakeProjection("actor.id");
     auto repo_id_proj = store.MakeProjection("repo.id");
@@ -271,13 +270,17 @@ int main(int argc, char* argv[]) {
       auto callback = [](IAsyncContext* ctxt, Status result) {
         assert(false);
       };
-      store.Refresh();
+      size_t cnt = 0;
       uint64_t serial_num = 0;
       for(size_t i = begin_line; i < batch_end; i += n_threads) {
         auto res = store.BatchInsert(batches[i], serial_num);
         bytes_ingested.fetch_add(batches[i].size());
         record_ingested.fetch_add(res);
-        store.Refresh();
+        cnt += res;
+        if (cnt % 256 == 0) {
+          store.Refresh();
+          cnt = 0;
+        }
         ++serial_num;
       }
       store.CompleteAction(true);
@@ -352,7 +355,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Recovery Test
-  store_t new_store{hash_table_size, store_size, argv[4]};
+  store_t new_store{hash_table_size, store_size, argv[5]};
   SetThreadAffinity(n_threads);
   uint32_t version;
   std::vector<Guid> recovered_session_ids;
@@ -372,27 +375,28 @@ int main(int argc, char* argv[]) {
     uint64_t serial_num;
     uint32_t offset;
     std::tie(serial_num, offset) = new_store.ContinueSession(guids[thread_no]);
-    //new_store.StartSession();
     size_t begin_line = thread_no;
     size_t batch_end = batches.size();
     auto callback = [](IAsyncContext* ctxt, Status result) {
       assert(false);
     };
     new_store.Refresh();
-    uint32_t op_cnt = 0;
-    //uint64_t serial_num = sessions[thread_no].first;
+    size_t cnt = 0;
     bool flag = true;
     for(size_t i = begin_line + serial_num * n_threads; i < batch_end; i += n_threads) {
       if(flag) {
         printf("Inserting batch no %zu with offset %u...\n", serial_num, offset);
-        new_store.BatchInsert(batches[i], serial_num, offset);
+        cnt += new_store.BatchInsert(batches[i], serial_num, offset);
         flag = false;
       } else {
-        new_store.BatchInsert(batches[i], serial_num);
+        cnt += new_store.BatchInsert(batches[i], serial_num);
+      }
+      if (cnt % 256 == 0) {
+        new_store.Refresh();
+        cnt = 0;
       }
       new_store.Refresh();
       ++serial_num;
-      ++op_cnt;
     }
     new_store.CompleteAction(true);
     new_store.StopSession();

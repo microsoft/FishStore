@@ -22,13 +22,13 @@ Following are the possible commands you can use in the CLI demo:
 
 ```
 reg-field <field_name>                                     Register a field projection PSF on <field_name>.
-dereg-field <field_id>                                     Reregister a field projection PSF on <field_name>.
+dereg-field <field_name>                                   Reregister a field projection PSF on <field_name>.
 load-lib <path>                                            Load a PSF Library from <path>.
 reg-filter <lib_id> <func_name> <n_fields> <fields>...     Register a filter PSF <func_name> in Library <lib_id> defined over <fields>.
-rereg-filter <filter_id>                                   Reregister an assigned <filter_id>
+rereg-filter <filter_id>                                   Reregister a filter PSF that has been assigned to <filter_id>
 dereg-filter <filter_id>                                   Deregister the filter PSF with ID <filter_id>.
 scan filter <filter_id>                                    Do an index scan over Filter PSF #<filter_id>.
-scan field <field_id> <value>                              Do an index scan over field <field_name> (need to be registered) over <value>.
+scan field <field_name> <value>                            Do an index scan over field <field_name> (need to be registered) over <value>.
 print-throughput                                           Print the current ingestion throughput of FishStore.
 print-reg                                                  Print the current FishStore registration.
 exit                                                       Stop the demo.
