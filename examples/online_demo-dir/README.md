@@ -25,6 +25,7 @@ reg-field <field_name>                                     Register a field proj
 dereg-field <field_id>                                     Reregister a field projection PSF on <field_name>.
 load-lib <path>                                            Load a PSF Library from <path>.
 reg-filter <lib_id> <func_name> <n_fields> <fields>...     Register a filter PSF <func_name> in Library <lib_id> defined over <fields>.
+rereg-filter <filter_id>                                   Reregister an assigned <filter_id>
 dereg-filter <filter_id>                                   Deregister the filter PSF with ID <filter_id>.
 scan filter <filter_id>                                    Do an index scan over Filter PSF #<filter_id>.
 scan field <field_id> <value>                              Do an index scan over field <field_name> (need to be registered) over <value>.
