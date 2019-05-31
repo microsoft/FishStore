@@ -12,6 +12,8 @@ our examples).
 
 You can read more about the concepts behind FishStore in our recent [research paper](https://badrish.net/papers/fishstore-sigmod19.pdf).
 
+For detailed usage of FishStore, please refer to [our tutorial](tutorial.md).
+
 
 # Building FishStore
 
