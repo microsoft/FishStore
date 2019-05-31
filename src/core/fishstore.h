@@ -197,11 +197,10 @@ class FishStore {
   typedef AsyncPendingScanContext async_pending_scan_context_t;
   typedef AsyncPendingFullScanContext async_pending_full_scan_context_t;
 
-  FishStore(uint64_t table_size, uint64_t log_size, const std::string& filename,
-            double log_mutable_fraction = 0.5, uint16_t field_cnt = 0)
+  FishStore(uint64_t table_size, uint64_t log_size, const std::string& filename, uint16_t field_cnt = 0)
     : min_table_size_{ table_size }
     , disk{ filename, epoch_ }
-    , hlog{ log_size, epoch_, disk, disk.log(), log_mutable_fraction }
+    , hlog{ log_size, epoch_, disk, disk.log() }
     , system_state_{ Action::None, Phase::REST, 1 }
     , num_pending_ios{ 0 }
     , system_parser_no_{ 0 } {

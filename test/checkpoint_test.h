@@ -162,7 +162,7 @@ TEST(CLASS, Checkpoint_Concurrent) {
   std::vector<Guid> guids(n_threads);
 
   {
-    store_t store{ 8192, 201326592, "test", 0.4 };
+    store_t store{ 8192, 201326592, "test" };
     store.StartSession();
     auto id_proj = store.MakeProjection("id");
     auto gender_proj = store.MakeProjection("gender");
@@ -232,7 +232,7 @@ TEST(CLASS, Checkpoint_Concurrent) {
     store.StopSession();
   }
 
-  store_t new_store{ 8192, 201326592, "test", 0.4 };
+  store_t new_store{ 8192, 201326592, "test" };
   uint32_t version;
   std::vector<Guid> recovered_session_ids;
   new_store.Recover(index_token, log_token, version, recovered_session_ids);

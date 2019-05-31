@@ -172,7 +172,7 @@ private:
 TEST(Registration, Register_Concurrent) {
   std::experimental::filesystem::remove_all("test");
   std::experimental::filesystem::create_directories("test");
-  store_t store{ 8192, 201326592, "test", 0.4 };
+  store_t store{ 8192, 201326592, "test" };
   store.StartSession();
   auto school_id_proj = store.MakeProjection("school.id");
   std::vector<ParserAction> actions;
@@ -242,7 +242,7 @@ TEST(Registration, Register_Concurrent) {
 TEST(Registration, Deregister_Concurrent) {
   std::experimental::filesystem::remove_all("test");
   std::experimental::filesystem::create_directories("test");
-  store_t store{ 8192, 201326592, "test", 0.4 };
+  store_t store{ 8192, 201326592, "test" };
   store.StartSession();
   auto school_id_proj = store.MakeProjection("school.id");
   std::vector<ParserAction> actions;

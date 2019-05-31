@@ -243,8 +243,7 @@ class PersistentMemoryMalloc {
   /// The first 4 HLOG pages should be below the head (i.e., being flushed to disk).
   static constexpr uint32_t kNumHeadPages = 4;
 
-  PersistentMemoryMalloc(uint64_t log_size, LightEpoch& epoch, disk_t& disk_, log_file_t& file_,
-                         Address start_address, double log_mutable_fraction)
+  PersistentMemoryMalloc(uint64_t log_size, LightEpoch& epoch, disk_t& disk_, log_file_t& file_, Address start_address)
     : sector_size{ static_cast<uint32_t>(file_.alignment()) }
     , epoch_{ &epoch }
     , disk{ &disk_ }
@@ -275,7 +274,8 @@ class PersistentMemoryMalloc {
       throw std::invalid_argument{ "Must have at least 2 non-head pages" };
     }
     // The latest N pages should be mutable.
-    num_mutable_pages_ = static_cast<uint32_t>(log_mutable_fraction * buffer_size_);
+    //num_mutable_pages_ = static_cast<uint32_t>(log_mutable_fraction * buffer_size_);
+    num_mutable_pages_ = 2;
     if(num_mutable_pages_ <= 1) {
       // Need at least two mutable pages: one to write to, and one to open up when the previous
       // mutable page is full.
@@ -297,9 +297,8 @@ class PersistentMemoryMalloc {
       AllocatePage(i);
   }
 
-  PersistentMemoryMalloc(uint64_t log_size, LightEpoch& epoch, disk_t& disk_, log_file_t& file_,
-                         double log_mutable_fraction)
-    : PersistentMemoryMalloc(log_size, epoch, disk_, file_, Address{ 0 }, log_mutable_fraction) {
+  PersistentMemoryMalloc(uint64_t log_size, LightEpoch& epoch, disk_t& disk_, log_file_t& file_)
+    : PersistentMemoryMalloc(log_size, epoch, disk_, file_, Address{ 0 }) {
     /// Allocate the invalid page. Supports allocations aligned up to kCacheLineBytes.
     uint32_t discard;
     Allocate(Constants::kCacheLineBytes, discard);
