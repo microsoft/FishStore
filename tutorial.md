@@ -4,11 +4,11 @@ This document provides a tutorial of basic concepts and core API of FishStore. F
 
 # Predicated Subset Functions (PSFs)
 
-A central concept in FishStore is *predicated subset function (PSF)*, which logically groups records with similar properties for later retrieval. Technically, given a data source of records in $R$, a PSF is a function $f: R \rightarrow D$ that maps valid records in $R$, based on a set of *field of interest* in $R$ to a specific value in domain D.
+A central concept in FishStore is *predicated subset function (PSF)*, which logically groups records with similar properties for later retrieval. Technically, given a data source of records in R, a PSF is a function f: R -> D that maps valid records in R, based on a set of *field of interest* in R to a specific value in domain D.
 
-For example, the field projection function $\Pi_C(r)$ is a valid PSF that maps a record $r$ to the value of its field C. If $r$ does not contain field $C$ or its value for field C is `null`, we have $\Pi_C(r) =$ `null`.
+For example, the field projection function π<sub>C</sub>(r) is a valid PSF that maps a record r to the value of its field C. If r does not contain field C or its value for field C is `null`, we have π<sub>C</sub>(r) = `null`.
 
-Given a set of PSFs, a particular record may satisfy (i.e., have a non-`null` value for) serveral of them. We call these the properies of the record. Formally, a record $r \in R$ is said to have property $(f, v)$, where $f$ is a PSF mapping $R$ to $D$ and $f(r) = v \in D$.
+Given a set of PSFs, a particular record may satisfy (i.e., have a non-`null` value for) serveral of them. We call these the properies of the record. Formally, a record r ∈ R is said to have property (f, v), where f is a PSF mapping R to D and f(r) = v ∈ D.
 
 PSFs are implemented by users as functions with specific signatures inside dynamic linking libraries. For more details, please refer to [this document](examples/lib_examples/README.md) and [PSF library examples](examples/lib_examples).
 
