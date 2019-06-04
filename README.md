@@ -102,7 +102,7 @@ build script is the CMakeLists.txt located in the root directory.
 
 # Extensions
 
-FishStore is a general storage layer upporting different input data formats and general PSFs. Specificallly, users can extend FishStore by implemeneting their own parser adaptors and PSF libaries, for more details please refer to:
+FishStore is a general storage layer supporting different input data formats and general PSFs. Specifically, users can extend FishStore by implementing their own parser adaptors and PSF libaries, for more details please refer to:
 
 * [Extending FishStore with Parser Adaptors](examples/adaptor_examples/README.md)
 * [Composing PSF Libraries](examples/lib_examples/README.md) 
