@@ -10,7 +10,7 @@ For example, the field projection function π<sub>C</sub>(r) is a valid PSF that
 
 Given a set of PSFs, a particular record may satisfy (i.e., have a non-`null` value for) serveral of them. We call these the properies of the record. Formally, a record r ∈ R is said to have property (f, v), where f is a PSF mapping R to D and f(r) = v ∈ D.
 
-PSFs are implemented by users as functions with specific signatures inside dynamic linking libraries. For more details, please refer to [this document](examples/lib_examples/README.md) and [PSF library examples](examples/lib_examples).
+PSFs are implemented by users as functions with specific signatures inside dynamic link libraries (DLLs). For details, please refer to [this document](examples/lib_examples/README.md) and [PSF library examples](examples/lib_examples).
 
 # Construct FishStore
 
