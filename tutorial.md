@@ -4,27 +4,28 @@ This document provides a tutorial of basic concepts and core API of FishStore. F
 
 # Predicated Subset Functions (PSFs)
 
-A central concept in FishStore is *predicated subset function (PSF)*, which logically groups records withsimilar properties for later retrieval. Technically, given a data source of records in $R$, a PSF is a function $f: R \rightarrow D$ that maps valid records in $R$, based on a set of *field of interest* in $R$ to a specific value in domain D.
+A central concept in FishStore is *predicated subset function (PSF)*, which logically groups records with similar properties for later retrieval. Technically, given a data source of records in $R$, a PSF is a function $f: R \rightarrow D$ that maps valid records in $R$, based on a set of *field of interest* in $R$ to a specific value in domain D.
 
 For example, the field projection function $\Pi_C(r)$ is a valid PSF that maps a record $r$ to the value of its field C. If $r$ does not contain field $C$ or its value for field C is `null`, we have $\Pi_C(r) =$ `null`.
 
-Given a set of PSFs, a particular record may satisfy (i.e., have a non-`null` value for) serveral of them. We call thee the properies of the record. Formally, a record $r \in R$ is said to have property $(f, v)$, where $f$ is a PSF mapping $R$ to $D$ and $f(r) = v \in D$.
+Given a set of PSFs, a particular record may satisfy (i.e., have a non-`null` value for) serveral of them. We call these the properies of the record. Formally, a record $r \in R$ is said to have property $(f, v)$, where $f$ is a PSF mapping $R$ to $D$ and $f(r) = v \in D$.
 
 PSFs are implemented by users as functions with specific signatures inside dynamic linking libraries. For more details, please refer to [this document](examples/lib_examples/README.md) and [PSF library examples](examples/lib_examples).
 
 # Construct FishStore
 
-To construct fishstore, user need to specify several template arguments and store parameter. Specifically, a valid FishStore instance is of type:
+To construct fishstore, the user needs to specify several template arguments and store parameters. Specifically, a valid FishStore instance is of type:
 
 ```cpp
 fishstore::core::FishStore<class disk_t, class adaptor_t>;
 ```
 
-`disk_t` specifies what underlying I/O utilities FishStore will use. In our current version, we support two types of them:
-- `fishstore::device::NullDisk` will discard any data spill out of memory, thus no data will be persisted onto disk. We use it mainly for test purpose.
-- `fishstore::device::FileSystemDisk<class handler_t, uint64_t size>` will persist all data to a folder in the file system. Tempalte argument `handler_t` indicates what I/O handler FishStore ueses: we currently support a queue I/O handler for Linux/Windows, and a threadPool I/O handler for Windows. Tempalte argument `size` is the number of bytes FishStore will bundled in each log file.
+`disk_t` specifies what underlying I/O utilities FishStore will use. In our current version, we support two types of disks:
+- `fishstore::device::NullDisk` will discard any data that spills out of memory, thus no data will be persisted onto disk. We use it mainly for test purposes.
 
-`adaptor_t` specifies which parser adaptor FishStore will use. A parser adaptor help FishStore work with a specific parser so as to parse raw input text to fields. For more details about how to implement a parser adaptor, please refer to [this document](examples/adaptor_examples/README.md).
+- `fishstore::device::FileSystemDisk<class handler_t, uint64_t size>` will persist all data to a folder in the file system. Template argument `handler_t` indicates what I/O handler FishStore uses: we currently support a queue I/O handler for Linux/Windows, and a threadPool I/O handler for Windows. Tempalte argument `size` is the number of bytes FishStore will bundled in each log file.
+
+`adaptor_t` specifies which parser adaptor FishStore will use. A parser adaptor helps FishStore work with a specific parser so as to parse raw input text to fields. For more details about how to implement a parser adaptor, please refer to [this document](examples/adaptor_examples/README.md).
 
 Below is an example for constructing a FishStore instance:
 
@@ -39,33 +40,33 @@ using store_t = fishstore::core::FishStore<disk_t, adaptor_t>;
 store_t store {1LL << 24, 1LL << 31, "fishstore_data"};
 ```
 
-It construct a FishStore instance which has a initial hash table size of $2^{24}$ hash entries, 2GB of in memory buffer, and persiting data to the directory `"fishstore_data"` using a queue I/O handler and bundling each 1GB persisted data into a file.
+It constructs a FishStore instance which has an initial hash table size of $2^{24}$ hash entries, 2GB of in-memory buffer, and persisting data to the directory `"fishstore_data"` using a queue I/O handler and bundling each 1GB of persisted data into a file.
 
-Once the FishStore instance is constructed, user can use the following interfaces to start or stop a session on a thread:
+Once the FishStore instance is constructed, the user can use the following interfaces to start or stop a session on a thread:
 
 ```cpp
 Guid session_id = store.StartSession();
 store.StopSession();
 ```
 
-**FishStore will only provide guarantees on threads registered as a sesion. So please make sure to start a session before doing anything to the FishStore instance on a thread.**
+**FishStore will only provide guarantees on threads registered as a session. So, please make sure to start a session before interacting with a FishStore instance on a thread.**
 
 # PSF Loading and De/registration
 
-Before registering a PSF in FishStore, user need to load PSF libraries and ask FishStore to assign a PSF ID in its naming service. Specifically, user can load a set of PSFs from a dynamic linking library as below:
+Before registering a PSF in FishStore, user need to load PSF libraries and ask FishStore to assign a PSF ID using its naming service. Specifically, user can load a set of PSFs from a dynamic link library (DLL) as below:
 
 ```cpp
 uint64_t lib_id = store.LoadPSFLibrary("library_path");
 ```
 
-If the library load successfully, FishStore will allocate a library ID for further reference. Once a PSF library loaded, we can register a PSF into FishStore's naming service by:
+If the library loads successfully, FishStore will allocate a unique library ID for further reference. Once a PSF library is loaded, we can register a PSF into FishStore's naming service as follows:
 
 ```cpp
 uint16_t general_psf_id = store.MakeGeneralPSF({"field1", "field2"}, lib_id, "foo1");
 uint32_t inline_psf_id = store.MakeInlinePSF({"field3", "field4"}, lib_id, "foo2");
 ```
 
-User need to specify which fields you want to pass to the PSF, the library ID in which the PSF resides and its function name. For example, in the code example above, we registered a general PSF `foo1` defined in PSF library with ID `lib_id` over `field1` and `field2`. Similarly, we also registered an inline PSF `foo2` defiend in the same library over `field3` and `field4`.
+User need to specify which fields you want to pass to the PSF, the library ID in which the PSF resides and its function name. For example, in the code example above, we registered a general PSF `foo1` defined in PSF library with ID `lib_id` over `field1` and `field2`. Similarly, we also registered an inline PSF `foo2` defined in the same library over `field3` and `field4`.
 
 We also provide a shortcut for registering a field projection PSF (as a general PSF):
 
@@ -73,11 +74,9 @@ We also provide a shortcut for registering a field projection PSF (as a general 
 uint16_t projection_psf_id = store.MakeProjection("proj_field");
 ```
 
-The return value of a general PSF can be any size, while an inline PSF has a return value of 32 bit integer. Users need to guarantee the function signature of given PSF matches the API they call. For more details about composing PSF library, please refer to [this document](examples/lib_examples/README.md).
+The return value of a general PSF can be any size, while an inline PSF has a return value of 32 bit integer. Users need to ensure that the function signature of a given PSF matches the API they call. For more details about composing PSF library, please refer to [this document](examples/lib_examples/README.md).
 
-*Note that general PSFs and inline PSFs have separate name spaces, please do not confuse. Currently, we support up to $2^{32} - 1$ inline PSFs and $2^{16} - 1$ general PSFs.*
-
-*Furthermore, FishStore will NOT recycle deregistered PSF IDs or do any deduplications.*
+*Note that general PSFs and inline PSFs have separate name spaces, and should not be confused. Currently, we support up to $2^{32} - 1$ inline PSFs and $2^{16} - 1$ general PSFs. Furthermore, FishStore will NOT recycle deregistered PSF IDs or do any deduplications.*
 
 With the PSF ID allocated, user can register and deregister PSFs in batches using the following interface:
 
@@ -101,20 +100,20 @@ store.CompleteAction(true);
 
 User can push all the de/registration actions in a single vector and call `ApplyParserShift` to apply all of them at once. `ApplyParserShift` will return a safe unregister address synchronously indicating the address up to which FishStore gurantees records are still fully indexed on requested PSF deregistrations. The safe register boundary is provided asynchronously through the callback, which provides the starting address where FishStore started indexing fully on requested PSF registrations.
 
-`store.CompleteAction(true)` will to stall this thread until the requested actions are done. In contrast, `store.CompleteAction()` will check if the request is ongoing. It will return `false` if the action is still pending, otherwise return `true`.
+`store.CompleteAction(true)` will stall the issuing thread until the requested actions are done. In contrast, `store.CompleteAction()` will check if the request is ongoing. It will return `false` if the action is still pending, and otherwise return `true`.
 
-*Both naming service and PSF de/registartion service are thread safe. User can call on any valid FishStore session with the guarantees being propagated to all sessions.*
+*Both the naming service and the PSF de/registration service are thread safe. Users can call them on any valid FishStore session with the guarantees being propagated to all sessions.*
 
 # Data Ingestion
 
-User can ingest a batch of records from raw text using:
+User can ingest a batch of records from raw text as follows:
 
 ```cpp
 FishStore<D, A>::BatchInsert(const char* payload, size_t length, uint64_t monotomic_serial_num, uint32_t offset = 0);
 FishStore<D, A>::BatchInsert(const std::string& payload, uint64_t monotomic_serial_num, uint32_t offset = 0);
 ```
 
-In particular, user pass in a batch of records in raw text, provide a thread-local monotomic serial number for checkpointing purpose, and a offset indicating the offset in the payload where parser should start parsing. To make sure FishStore synchronizing multiple sessions properly, user also need to periodically refresh its own session using `store.Refresh()`.
+In particular, the user can pass in a batch of records in raw text, provide a thread-local monotomic serial number for checkpointing purpose, and a offset indicating the offset in the payload where parser should start parsing. To make sure FishStore synchronizes multiple sessions properly, the user also need to periodically refresh its own session using `store.Refresh()`.
 
 For example, user can ingest all raw-text-form records in a vector of string `batches` as below:
 
@@ -129,9 +128,12 @@ for (const std::string& batch : batches) {
 
 # Subset Retrieval
 
-User have two methods to retrieve a subset from ingested data, namely, index scan and full scan.
+Users are provided with two methods for retrieving a subset from ingested data, namely, index scan and full scan.
 
-For index scan, given a property $(f, v)$ over a registered PSF $f$, fishStore will touch all indexed record within an optional address range. In order to define customized logic, user need to define a scan context fulfilling the following interface:
+
+## Index Scan
+
+For index scan, given a property $(f, v)$ over a registered PSF $f$, FishStore will touch all indexed record within an optional address range. In order to define customized logic, user need to define a scan context fulfilling the following interface:
 
 ```cpp
 class ScanContext : public IAsyncContext {
@@ -156,7 +158,7 @@ For a property based on a inline PSF with ID `psf_id` and an integer value `valu
 fishstore::core::Utility::GetHashCode(psf_id, value);
 ```
 
-Function `check` is used to double check if a record is visisted because of a hash collision. The standard implementation for a general PSF based property is:
+Function `check` is used to double check if a record is visited because of a hash collision. The standard implementation for a general PSF based property is:
 
 ```cpp
 inline bool check(const core::KeyPointer* kpt) {
@@ -166,7 +168,7 @@ inline bool check(const core::KeyPointer* kpt) {
 }
 ```
 
-while the standard implmenetation for an inline PSF based property is:
+while the standard implementation for an inline PSF based property is:
 
 ```cpp
 inline bool check(const core::KeyPointer* kpt) {
@@ -205,6 +207,8 @@ FishStore will only return records reside on its log between `start_address` and
 
 User can call `store.CompletePending(true)` to stall the current thread to wait until all pending requets to complete. Otherwise, user can call `store.CompletePending()` to check if all pending requests are completed.
 
+## Full Scan
+
 The other type of record retrieval FishStore supports is full scan. A full scan will check all record one by one wihtin the search range against a given check function. Specifically, user need to define a full scan context fulfilling the following interface:
 
 ```cpp
@@ -219,7 +223,7 @@ protected:
 };
 ```
 
-The only difference is that `check()` fucntion is directly apply on a payload rather than `fishstore::core::KeyPointer`. To lauch a full scan, FishStore provides a similar API as index scan:
+The only difference is that `check()` function is directly apply on a payload rather than `fishstore::core::KeyPointer`. To lauch a full scan, FishStore provides a similar API as index scan:
 
 ```cpp
 Status res = store.FullScan(context, callback, serial_num, start_address, end_address);
@@ -233,9 +237,9 @@ fishstore::core::Constants::SetAvgRecordSize(avg_record_size);
 
 # Checkpoint and Recovery
 
-FishStore supports a simplified version of concurrent prefix recovery (CPR) model. For more details of CPR model, please refer to [this paper](https://www.microsoft.com/en-us/research/uploads/prod/2019/01/cpr-sigmod19.pdf).
+FishStore supports a simplified version of the concurrent prefix recovery (CPR) model used in FASTER. For more details on the CPR model, please refer to [this paper](https://www.microsoft.com/en-us/research/uploads/prod/2019/01/cpr-sigmod19.pdf).
 
-FishStore can checkpoint its hash table and log together or seperately. Checkpointing is done asynchronously with a callback and uniquely identify with a Guid. Below are checkpointing examples for log, hash table, and them together:
+FishStore can checkpoint its hash table and log together or separately. Checkpointing is done asynchronously with a callback and uniquely identify with a Guid. Below are checkpointing examples for log, index (hash table), and both together:
 
 ```cpp
 auto index_checkpoint_callback = [](Status result) {
@@ -282,4 +286,4 @@ Other than the recover status, `Recover()` also returns the internal version num
 std::tie(serial_num, offset) = store.ContinueSession(session_id);
 ```
 
-By continuing a session, user can retrieve the serial number and ingestion offset by the checkpointing time. With the help of this, user can continue a running session from a consistent point without causing any duplications.
+By continuing a session, user can retrieve the serial number and ingestion offset at checkpointing time. With the help of this information, user can continue a running session from a consistent point without causing any duplications or data loss.
