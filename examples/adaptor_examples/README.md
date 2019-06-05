@@ -23,7 +23,7 @@ public:
 
   static parser_t* NewParser(const std::vector<std::string>& fields);
 
-  istatic SIMDJsonRecords Parse(parser_t* const parser, const char* payload, size_t length, size_t offset = 0);
+  static SIMDJsonRecords Parse(parser_t* const parser, const char* payload, size_t length, size_t offset = 0);
 };
 ```
 
