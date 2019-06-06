@@ -40,7 +40,7 @@ using store_t = fishstore::core::FishStore<disk_t, adaptor_t>;
 store_t store {1LL << 24, 1LL << 31, "fishstore_data"};
 ```
 
-It constructs a FishStore instance which has an initial hash table size of $2^{24}$ hash entries, 2GB of in-memory buffer, and persisting data to the directory `"fishstore_data"` using a queue I/O handler and bundling each 1GB of persisted data into a file.
+It constructs a FishStore instance which has an initial hash table size of 2<sup>24</sup> hash entries, 2GB of in-memory buffer, and persisting data to the directory `"fishstore_data"` using a queue I/O handler and bundling each 1GB of persisted data into a file.
 
 Once the FishStore instance is constructed, the user can use the following interfaces to start or stop a session on a thread:
 
