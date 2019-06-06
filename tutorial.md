@@ -53,13 +53,13 @@ store.StopSession();
 
 # PSF Loading and De/registration
 
-Before registering a PSF in FishStore, user need to load PSF libraries and ask FishStore to assign a PSF ID using its naming service. Specifically, user can load a set of PSFs from a dynamic link library (DLL) as below:
+Before registering a PSF in FishStore, the user needs to load the corresponding PSF library and ask FishStore to assign the PSF an ID using its naming service. Specifically, the user can load a set of PSFs from a dynamic link library (DLL) as below:
 
 ```cpp
 uint64_t lib_id = store.LoadPSFLibrary("library_path");
 ```
 
-If the library loads successfully, FishStore will allocate a unique library ID for further reference. Once a PSF library is loaded, we can register a PSF into FishStore's naming service as follows:
+If the library loads successfully, FishStore will allocate a unique library ID for further reference. Once a PSF library is loaded, we can register PSFs into FishStore's naming service as follows:
 
 ```cpp
 uint16_t general_psf_id = store.MakeGeneralPSF({"field1", "field2"}, lib_id, "foo1");
@@ -76,7 +76,7 @@ uint16_t projection_psf_id = store.MakeProjection("proj_field");
 
 The return value of a general PSF can be any size, while an inline PSF has a return value of 32 bit integer. Users need to ensure that the function signature of a given PSF matches the API they call. For more details about composing PSF library, please refer to [this document](examples/lib_examples/README.md).
 
-*Note that general PSFs and inline PSFs have separate name spaces, and should not be confused. Currently, we support up to $2^{32} - 1$ inline PSFs and $2^{16} - 1$ general PSFs. Furthermore, FishStore will NOT recycle deregistered PSF IDs or do any deduplications.*
+*Note that general PSFs and inline PSFs have separate name spaces, and should not be confused. Currently, we support up to 2<sup>32</sup> - 1 inline PSFs and 2<sup>16</sup> - 1 general PSFs. Furthermore, FishStore will NOT recycle deregistered PSF IDs or do any deduplications.*
 
 With the PSF ID allocated, user can register and deregister PSFs in batches using the following interface:
 
