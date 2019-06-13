@@ -91,40 +91,6 @@ class SIMDJsonRecord {
 public:
   friend class SIMDJsonParser;
 
-  class Iterator : public std::iterator<std::input_iterator_tag, const SIMDJsonField> {
-  public:
-    Iterator(const SIMDJsonRecord* const rec_, size_t offset_ = 0)
-      : rec(rec_), offset(offset_) {}
-
-    inline const SIMDJsonField& operator*() const {
-      return rec->fields[offset];
-    }
-
-    inline const SIMDJsonField* operator->() const {
-      return &rec->fields[offset];
-    }
-
-    inline Iterator& operator++() {
-      ++offset;
-      return *this;
-    }
-    inline Iterator operator++(int) {
-      Iterator tmp = *this;
-      ++(*this);
-      return tmp;
-    }
-
-    inline bool operator==(const Iterator& rhs) {
-      return rec == rhs.rec && offset == rhs.offset;
-    }
-    inline bool operator!=(const Iterator& rhs) {
-      return !(*this == rhs);
-    }
-  private:
-    const SIMDJsonRecord* const rec;
-    size_t offset;
-  };
-
   SIMDJsonRecord() : original(), fields() {}
 
   SIMDJsonRecord(const char* data, size_t length)
@@ -132,15 +98,11 @@ public:
     fields.clear();
   }
 
-  inline Iterator begin() const {
-    return Iterator{ this };
+  inline const std::vector<SIMDJsonField>& GetFields() const {
+    return fields;
   }
 
-  inline Iterator end() const {
-    return Iterator{ this, fields.size() };
-  }
-
-  inline StringRef GetAsRawTextRef() const {
+  inline StringRef GetRawText() const {
     return original;
   }
 
@@ -149,71 +111,13 @@ public:
   std::vector<SIMDJsonField> fields;
 };
 
-class SIMDJsonRecords {
-public:
-  friend class SIMDJsonParser;
-
-  class Iterator : public std::iterator<std::input_iterator_tag, const SIMDJsonRecord> {
-  public:
-    Iterator(const SIMDJsonRecords* const recs_, bool done_ = false)
-      : recs(recs_), done(done_) {}
-
-    inline const SIMDJsonRecord& operator*() const {
-      return recs->record;
-    }
-
-    inline const SIMDJsonRecord* operator->() const {
-      return &(recs->record);
-    }
-
-    inline Iterator& operator++() {
-      done = true;
-      return *this;
-    }
-
-    inline Iterator operator++(int) {
-      Iterator tmp = *this;
-      ++(*this);
-      return tmp;
-    }
-
-    inline bool operator==(const Iterator& rhs) {
-      return recs == rhs.recs && done == rhs.done;
-    }
-
-    inline bool operator!=(const Iterator& rhs) {
-      return !(*this == rhs);
-    }
-
-  private:
-    const SIMDJsonRecords* const recs;
-    bool done = false;
-  };
-
-  SIMDJsonRecords() : record() {
-  }
-
-  SIMDJsonRecords(const SIMDJsonRecord& rec) : record(rec) {}
-
-  inline Iterator begin() const {
-    return Iterator(this);
-  }
-
-  inline Iterator end() const {
-    return Iterator(this, true);
-  }
-private:
-  SIMDJsonRecord record;
-};
-
-
 class SIMDJsonParser {
 public:
   SIMDJsonParser(const std::vector<std::string>& field_names, const size_t alloc_bytes = 1LL << 25) {
-    fields = new TreeNode{};
+    root = new TreeNode{};
     for (auto field_id = 0; field_id < field_names.size(); ++field_id) {
       auto& field_name = field_names[field_id];
-      auto current_tree_node = fields;
+      auto current_tree_node = root;
       size_t start_pos = 0, pos = 0;
       while (std::string::npos != (pos = field_name.find('.', start_pos))) {
         auto slice = field_name.substr(start_pos, pos - start_pos);
@@ -237,23 +141,34 @@ public:
     }
     auto success = pj.allocateCapacity(alloc_bytes);
     assert(success);
+    has_next = false;
   }
 
   ~SIMDJsonParser() {
-    delete fields;
+    delete root;
   }
 
-  inline SIMDJsonRecords Parse(const char* buffer, size_t length) {
+  inline void Load(const char* buffer, size_t length) {
+    record.original = StringRef(buffer, length);
+    record.fields.clear();
     auto ok = json_parse(buffer, length, pj);
     if (ok != 0 || !pj.isValid()) {
       printf("Parsing failed...\n");
-      return SIMDJsonRecords();
+      has_next = false;
+    } else {
+      has_next = true;
     }
+  }
 
-    SIMDJsonRecord record(buffer, length);
+  inline bool HasNext() {
+    return has_next;
+  }
+
+  inline const SIMDJsonRecord& NextRecord() {
     ParsedJson::iterator it(pj);
-    Traverse(it, fields, record.fields);
-    return SIMDJsonRecords{ record };
+    Traverse(it, root, record.fields);
+    has_next = false;
+    return record;
   }
 
 private:
@@ -278,8 +193,10 @@ private:
     }
   }
 
-  TreeNode* fields;
+  TreeNode* root;
   ParsedJson pj;
+  SIMDJsonRecord record;
+  bool has_next;
 };
 
 class SIMDJsonAdaptor: public JsonAdaptor {
@@ -291,9 +208,17 @@ public:
     return new parser_t{ fields };
   }
 
-  inline static SIMDJsonRecords Parse(parser_t* const parser, const char* payload, size_t length, size_t offset = 0) {
+  inline static void Load(parser_t* const parser, const char* payload, size_t length, size_t offset = 0) {
     assert(offset <= length);
-    return parser->Parse(payload + offset, length - offset);
+    parser->Load(payload + offset, length - offset);
+  }
+
+  inline static bool HasNext(parser_t* const parser) {
+    return parser->HasNext();
+  }
+
+  inline static const SIMDJsonRecord& NextRecord(parser_t* const parser) {
+    return parser->NextRecord();
   }
 };
 

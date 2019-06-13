@@ -799,7 +799,7 @@ inline uint32_t FishStore<D, A>::BatchInsert(const char* data, size_t length,
 
   // Fetch the thread-local parser and parser record batch.
   const ParserState& parser_state = parser_states[parser_ctx().parser_no];
-  auto records = A::Parse(parser_ctx().parser, data, length, internal_offset);
+  A::Load(parser_ctx().parser, data, length, internal_offset);
 
   // make reservation for insert_contexts, kpts, field map, PSF arguments
   // to prevent re-allocation.
@@ -822,9 +822,10 @@ inline uint32_t FishStore<D, A>::BatchInsert(const char* data, size_t length,
   // Iterate through records and fields so as to construct insert context for
   // each record. Insert context contains the payload and the corresponding info
   // to build all key pointers, stored in kpts.
-  for(auto& record : records) {
+  while(A::HasNext(parser_ctx().parser)) {
+    auto& record = A::NextRecord(parser_ctx().parser);
     // Get the full record payload.
-    auto rec_ref = record.GetAsRawTextRef();
+    auto rec_ref = record.GetRawText();
     current_offset += static_cast<uint32_t>(rec_ref.Length());
     insert_contexts.emplace_back(RecordInsertContext{
       rec_ref.Data(), static_cast<uint32_t>(rec_ref.Length()), current_offset});
@@ -832,7 +833,7 @@ inline uint32_t FishStore<D, A>::BatchInsert(const char* data, size_t length,
     // Iterate through all parsed out fields to populate the field map for this
     // record.
     field_map.clear();
-    for(auto& field : record) {
+    for(auto& field : record.GetFields()) {
       field_map.emplace(parser_state.main_parser_field_ids[field.FieldId()], field);
     }
 
