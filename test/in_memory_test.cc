@@ -8,7 +8,7 @@
 
 #define _NULL_DISK
 
-#include "../examples/adaptor_examples/simdjson_adaptor.h"
+#include "adaptors/simdjson_adaptor.h"
 #include "core/fishstore.h"
 #include "device/null_disk.h"
 

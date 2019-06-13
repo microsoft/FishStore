@@ -7,7 +7,7 @@
 #include <experimental/filesystem>
 #include "gtest/gtest.h"
 
-#include "../examples/adaptor_examples/simdjson_adaptor.h"
+#include "adaptors/simdjson_adaptor.h"
 #include <device/file_system_disk.h>
 #include "core/fishstore.h"
 
