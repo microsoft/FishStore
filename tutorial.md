@@ -27,7 +27,7 @@ fishstore::core::FishStore<class disk_t, class adapter_t>;
 
 `adapter_t` specifies which parser adapter FishStore will use. A parser adapter helps FishStore work with a specific parser so as to parse raw input text to fields. For more details about how to implement a parser adapter, please refer to [this document](src/adapters/README.md).
 
-**In our current implementation, we provide a parser adapter based on [simdjson](https://github.com/lemire/simdjson) to handle general JSON ingestion. However, it is not perfect. We list known limitations [here](src/adapters/README.md#Example)**
+**In our current implementation, we provide a parser adapter based on [simdjson](https://github.com/lemire/simdjson) to handle general JSON ingestion. However, it is not perfect. We list known limitations [here](src/adapters/README.md#Example).**
 
 Below is an example for constructing a FishStore instance:
 
