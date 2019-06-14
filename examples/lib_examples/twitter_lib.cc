@@ -9,7 +9,7 @@
 #else
 #define LIBEXPORT_MACROS extern "C"
 #endif
-#include "simdjson_adaptor.h"
+#include "adaptors/simdjson_adaptor.h"
 #include "core/psf.h"
 
 typedef fishstore::adaptor::SIMDJsonAdaptor adaptor_t;

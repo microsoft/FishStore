@@ -7,7 +7,7 @@
 #include <memory>
 #include <fstream>
 
-#include "simdjson_adaptor.h"
+#include "adaptors/simdjson_adaptor.h"
 #include "core/fishstore.h"
 
 

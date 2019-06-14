@@ -50,10 +50,5 @@ using NullableBool = Nullable<bool>;
 using NullableStringRef = Nullable<StringRef>;
 using NullableString = Nullable<std::string>;
 
-class JsonAdaptor {};
-
-class CsvAdaptor {};
-
-
 }
 }

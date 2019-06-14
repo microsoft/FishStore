@@ -8,7 +8,7 @@
 
 #define _NULL_DISK
 
-#include "../examples/adaptor_examples/simdjson_adaptor.h"
+#include "adaptors/simdjson_adaptor.h"
 #include "core/fishstore.h"
 #include "device/null_disk.h"
 
@@ -123,9 +123,10 @@ public:
   }
 
   inline bool check(const char* payload, uint32_t payload_size) {
-    auto record = *(adaptor_t::Parse(parser.get(), payload, payload_size).begin());
+    adaptor_t::Load(parser.get(), payload, payload_size);
+    auto& record = adaptor_t::NextRecord(parser.get());
     tsl::hopscotch_map<uint16_t, typename adaptor_t::field_t> field_map(field_cnt);
-    for (auto& field : record) {
+    for (auto& field : record.GetFields()) {
       field_map.emplace(static_cast<int16_t>(field.FieldId()), field);
     }
     std::vector<adaptor_t::field_t> args;

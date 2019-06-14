@@ -122,9 +122,10 @@ public:
   }
 
   inline bool check(const char* payload, uint32_t payload_size) {
-    auto record = *(parser.Parse(payload, payload_size).begin());
+    parser.Load(payload, payload_size);
+    auto& record = parser.NextRecord();
     tsl::hopscotch_map<uint16_t, typename adaptor_t::field_t> field_map(field_names.size());
-    for (auto& field : record) {
+    for (auto& field : record.GetFields()) {
       field_map.emplace(static_cast<int16_t>(field.FieldId()), field);
     }
     std::vector<adaptor_t::field_t> args;

@@ -10,10 +10,9 @@ There are several public dataset available online you can use to try out FishSto
 You can download them by yourself and use them as test data of our examples.
 
 # Roadmap
-We provided examples of parser extension, PSF libraries and FishStore usage on different applications.
+We provided examples PSF libraries and FishStore usage on different applications.
 
 - [PSF Library Examples](lib_examples)
-- [Standard Parser Interface and Adaptors](adaptor_examples)
 - [Github Archive Example](github_query-dir)
 - [Twitter Example](twitter_query-dir)
 - [Checkpointing and Recovery Example](checkpoint_recorvery-dir)

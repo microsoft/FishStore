@@ -1,5 +1,7 @@
 # Build the FISHSTORE library.
 set (FISHSTORE_HEADERS
+  adaptors/common_utils.h
+  adaptors/simdjson_adaptor.h
   core/address.h
   core/alloc.h
   core/async.h
