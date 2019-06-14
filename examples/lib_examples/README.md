@@ -1,6 +1,6 @@
 # Composing PSF Libraries
 
-FishStore allows user to compose their own PSF libraries, register and deregister them on the fly. A PSF is a function that maps records to a value domain $D$. For a record $r$, we say it satisfy property $(f, v)$ if and only if $f(r) = v$. For each registered PSF, FishStore will index all records whose $f(r)$ does not evaluate to `null`.
+FishStore allows user to compose their own PSF libraries, register and deregister them on the fly. A PSF is a function that maps records to a value domain D. For a record r, we say it satisfy property (f, v) if and only if f(r) = v. For each registered PSF, FishStore will index all records whose $f(r)$ does not evaluate to `null`.
 
 To compose PSF libraries, user need to define their own PSF functions and compile them in a **dynamic linking library** (i.e., `dll` in Windows and `.so` in Linux/Unix). Generally, FishStore supports two types of PSFs, namely, General PSFs and Inline PSFs. This document will cover how user should define them in C++.
 
