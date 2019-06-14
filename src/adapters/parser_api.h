@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <vector>
 #include <string>
-#include "adaptors/common_utils.h"
+#include "adapters/common_utils.h"
 
-using namespace fishstore::adaptor;
+using namespace fishstore::adapter;
 
 class FieldValue {
 public:

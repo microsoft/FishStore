@@ -19,7 +19,7 @@
 #include "device/file_system_disk.h"
 #include "tsl/hopscotch_map.h"
 
-#include "adaptors/common_utils.h"
+#include "adapters/common_utils.h"
 
 #include "alloc.h"
 #include "checkpoint_locks.h"
@@ -186,7 +186,7 @@ class FishStore {
   typedef D disk_t;
   typedef typename D::file_t file_t;
   typedef typename D::log_file_t log_file_t;
-  typedef A adaptor_t;
+  typedef A adapter_t;
 
   typedef PersistentMemoryMalloc<disk_t> hlog_t;
 

@@ -7,7 +7,7 @@
 #include <memory>
 #include <fstream>
 
-#include "adaptors/simdjson_adaptor.h"
+#include "adapters/simdjson_adapter.h"
 #include "core/fishstore.h"
 
 
@@ -15,8 +15,8 @@ using namespace fishstore;
 
 typedef environment::QueueIoHandler handler_t;
 typedef device::FileSystemDisk<handler_t, 1073741824L> disk_t;
-typedef adaptor::SIMDJsonAdaptor adaptor_t;
-using store_t = core::FishStore<disk_t, adaptor_t>;
+typedef adapter::SIMDJsonAdapter adapter_t;
+using store_t = core::FishStore<disk_t, adapter_t>;
 
 std::atomic_uint32_t num_threads_persistent{ 0 };
 Guid log_token, index_token;

@@ -9,13 +9,13 @@
 #else
 #define LIBEXPORT_MACROS extern "C"
 #endif
-#include "adaptors/simdjson_adaptor.h"
+#include "adapters/simdjson_adapter.h"
 #include "core/psf.h"
 
-typedef fishstore::adaptor::SIMDJsonAdaptor adaptor_t;
+typedef fishstore::adapter::SIMDJsonAdapter adapter_t;
 using namespace fishstore::core;
 
-LIBEXPORT_MACROS NullableInt cpp_pr(const std::vector<adaptor_t::field_t>& fields) {
+LIBEXPORT_MACROS NullableInt cpp_pr(const std::vector<adapter_t::field_t>& fields) {
   auto type = fields[0].GetAsStringRef();
   auto language = fields[1].GetAsStringRef();
   if(type.HasValue() && strcmp("PullRequestEvent", type.Value().Data()) == 0 &&
@@ -25,7 +25,7 @@ LIBEXPORT_MACROS NullableInt cpp_pr(const std::vector<adaptor_t::field_t>& field
     return NullableInt{true, 0};
 }
 
-LIBEXPORT_MACROS NullableInt opened_issue(const std::vector<adaptor_t::field_t>& fields) {
+LIBEXPORT_MACROS NullableInt opened_issue(const std::vector<adapter_t::field_t>& fields) {
   auto type = fields[0].GetAsStringRef();
   auto payload_action = fields[1].GetAsStringRef();
   if(type.HasValue() && strcmp("IssuesEvent", type.Value().Data()) == 0 &&
@@ -35,7 +35,7 @@ LIBEXPORT_MACROS NullableInt opened_issue(const std::vector<adaptor_t::field_t>&
     return NullableInt{true, 0};
 }
 
-LIBEXPORT_MACROS NullableInt int_projection(const std::vector<adaptor_t::field_t>& fields) {
+LIBEXPORT_MACROS NullableInt int_projection(const std::vector<adapter_t::field_t>& fields) {
   auto ref = fields[0].GetAsInt();
   if (ref.HasValue()) {
     return NullableInt{ false, ref.Value() };

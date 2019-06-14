@@ -17,19 +17,19 @@ struct NullableStringRef {
 ```
 Specifically, `is_null` indicates if this is a `null` value, and `need_free` tells FishStore whether it requires be freed to avoid memory leakage.
 
-Given a particular parser adaptor `adaptor_t`, a general PSF should be defined in the following function signature:
+Given a particular parser adapter `adapter_t`, a general PSF should be defined in the following function signature:
 
 ```cpp
-fishstore::core::NullableStringRef foo(const std::vector<typename adaptor_t::field_t>& fields)}
+fishstore::core::NullableStringRef foo(const std::vector<typename adapter_t::field_t>& fields)}
 ```
 
-For more details about parser adaptors, please refer to [this](../adaptor_examples/README.md).
+For more details about parser adapters, please refer to [this](../adapter_examples/README.md).
 
 # Inline PSFs
 FishStore optimize specifically for PSFs with small fixed-size return values (to avoid allocating additional space in optional region). If a PSF returns a value less than 4 types, user can define it as:
 
 ```cpp
-fishstore::core::NullableInt foo(const std::vector<typename adaptor_t::field_t>& fields)}
+fishstore::core::NullableInt foo(const std::vector<typename adapter_t::field_t>& fields)}
 ```
 
 where `fishstore::core::NullableInt` is defined as below:

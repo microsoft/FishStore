@@ -5,7 +5,7 @@
 #include <experimental/filesystem>
 #include <fstream>
 
-#include "adaptors/simdjson_adaptor.h"
+#include "adapters/simdjson_adapter.h"
 #include "core/fishstore.h"
 
 
@@ -13,8 +13,8 @@ using namespace fishstore;
 
 typedef environment::QueueIoHandler handler_t;
 typedef device::FileSystemDisk<handler_t, 1073741824L> disk_t;
-typedef adaptor::SIMDJsonAdaptor adaptor_t;
-using store_t = core::FishStore<disk_t, adaptor_t>;
+typedef adapter::SIMDJsonAdapter adapter_t;
+using store_t = core::FishStore<disk_t, adapter_t>;
 
 class JsonGeneralScanContext : public IAsyncContext {
 public:

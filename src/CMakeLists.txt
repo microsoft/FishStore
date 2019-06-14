@@ -1,7 +1,7 @@
 # Build the FISHSTORE library.
 set (FISHSTORE_HEADERS
-  adaptors/common_utils.h
-  adaptors/simdjson_adaptor.h
+  adapters/common_utils.h
+  adapters/simdjson_adapter.h
   core/address.h
   core/alloc.h
   core/async.h
@@ -35,7 +35,7 @@ set (FISHSTORE_HEADERS
   device/null_disk.h
   environment/file.h
   environment/file_common.h
-  adaptors/common_utils.h
+  adapters/common_utils.h
 )
 
 if (MSVC)

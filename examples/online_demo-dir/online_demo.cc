@@ -7,14 +7,14 @@
 
 #define _NULL_DISK
 
-#include "adaptors/simdjson_adaptor.h"
+#include "adapters/simdjson_adapter.h"
 #include "device/null_disk.h"
 #include "core/fishstore.h"
 
 typedef fishstore::environment::QueueIoHandler handler_t;
 typedef fishstore::device::NullDisk disk_t;
-typedef fishstore::adaptor::SIMDJsonAdaptor adaptor_t;
-using store_t = fishstore::core::FishStore<disk_t, adaptor_t>;
+typedef fishstore::adapter::SIMDJsonAdapter adapter_t;
+using store_t = fishstore::core::FishStore<disk_t, adapter_t>;
 
 std::unordered_map<std::string, uint16_t> field_ids;
 

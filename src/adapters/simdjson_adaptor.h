@@ -10,10 +10,10 @@
 
 #include <simdjson/parsedjson.h>
 #include <simdjson/jsonparser.h>
-#include "adaptors/common_utils.h"
+#include "adapters/common_utils.h"
 
 namespace fishstore {
-namespace adaptor {
+namespace adapter {
 
 struct TreeNode {
   TreeNode(): field_id(-1) {}
@@ -199,7 +199,7 @@ private:
   bool has_next;
 };
 
-class SIMDJsonAdaptor {
+class SIMDJsonAdapter {
 public:
   typedef SIMDJsonParser parser_t;
   typedef SIMDJsonField field_t;

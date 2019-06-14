@@ -8,14 +8,14 @@
 
 #define _NULL_DISK
 
-#include "adaptors/simdjson_adaptor.h"
+#include "adapters/simdjson_adapter.h"
 #include "core/fishstore.h"
 #include "device/null_disk.h"
 
 using namespace fishstore::core;
-using adaptor_t = fishstore::adaptor::SIMDJsonAdaptor;
+using adapter_t = fishstore::adapter::SIMDJsonAdapter;
 using disk_t = fishstore::device::NullDisk;
-using store_t = FishStore<disk_t, adaptor_t>;
+using store_t = FishStore<disk_t, adapter_t>;
 
 const size_t n_records = 1000000;
 const size_t n_threads = 4;
@@ -93,8 +93,8 @@ private:
 class JsonFullScanContext : public IAsyncContext {
 public:
   JsonFullScanContext(const std::vector<std::string>& field_names,
-    const general_psf_t<adaptor_t>& pred, const char* value, uint32_t expected)
-    : parser{ adaptor_t::NewParser(field_names) },
+    const general_psf_t<adapter_t>& pred, const char* value, uint32_t expected)
+    : parser{ adapter_t::NewParser(field_names) },
     eval_{ pred },
     field_cnt{ field_names.size() },
     cnt{ 0 },
@@ -123,13 +123,13 @@ public:
   }
 
   inline bool check(const char* payload, uint32_t payload_size) {
-    adaptor_t::Load(parser.get(), payload, payload_size);
-    auto& record = adaptor_t::NextRecord(parser.get());
-    tsl::hopscotch_map<uint16_t, typename adaptor_t::field_t> field_map(field_cnt);
+    adapter_t::Load(parser.get(), payload, payload_size);
+    auto& record = adapter_t::NextRecord(parser.get());
+    tsl::hopscotch_map<uint16_t, typename adapter_t::field_t> field_map(field_cnt);
     for (auto& field : record.GetFields()) {
       field_map.emplace(static_cast<int16_t>(field.FieldId()), field);
     }
-    std::vector<adaptor_t::field_t> args;
+    std::vector<adapter_t::field_t> args;
     args.reserve(field_cnt);
     for (uint16_t i = 0; i < field_cnt; ++i) {
       auto it = field_map.find(i);
@@ -149,8 +149,8 @@ protected:
   }
 
 private:
-  std::shared_ptr<adaptor_t::parser_t> parser;
-  general_psf_t<adaptor_t> eval_;
+  std::shared_ptr<adapter_t::parser_t> parser;
+  general_psf_t<adapter_t> eval_;
   size_t field_cnt;
   uint32_t cnt, expected;
   uint32_t value_size_;
@@ -319,12 +319,12 @@ TEST(InMemFishStore, FullScan) {
     ASSERT_EQ(result, Status::Ok);
   };
 
-  JsonFullScanContext context1{ {"id"}, fishstore::core::projection<adaptor_t>, "1234", 1 };
+  JsonFullScanContext context1{ {"id"}, fishstore::core::projection<adapter_t>, "1234", 1 };
   auto res = store.FullScan(context1, callback, 0);
   ASSERT_EQ(res, Status::Ok);
   store.CompletePending();
 
-  JsonFullScanContext context2{ {"gender"}, fishstore::core::projection<adaptor_t>, "male", n_records / 2 };
+  JsonFullScanContext context2{ {"gender"}, fishstore::core::projection<adapter_t>, "male", n_records / 2 };
   res = store.FullScan(context2, callback, 0);
   ASSERT_EQ(res, Status::Ok);
   store.CompletePending();

@@ -17,7 +17,7 @@ PSFs are implemented by users as functions with specific signatures inside dynam
 To construct fishstore, the user needs to specify several template arguments and store parameters. Specifically, a valid FishStore instance is of type:
 
 ```cpp
-fishstore::core::FishStore<class disk_t, class adaptor_t>;
+fishstore::core::FishStore<class disk_t, class adapter_t>;
 ```
 
 `disk_t` specifies what underlying I/O utilities FishStore will use. In our current version, we support two types of disks:
@@ -25,15 +25,15 @@ fishstore::core::FishStore<class disk_t, class adaptor_t>;
 
 - `fishstore::device::FileSystemDisk<class handler_t, uint64_t size>` will persist all data to a folder in the file system. Template argument `handler_t` indicates what I/O handler FishStore uses: we currently support a queue I/O handler for Linux/Windows, and a threadPool I/O handler for Windows. Tempalte argument `size` is the number of bytes FishStore will bundled in each log file.
 
-`adaptor_t` specifies which parser adaptor FishStore will use. A parser adaptor helps FishStore work with a specific parser so as to parse raw input text to fields. For more details about how to implement a parser adaptor, please refer to [this document](src/adaptors//README.md).
+`adapter_t` specifies which parser adapter FishStore will use. A parser adapter helps FishStore work with a specific parser so as to parse raw input text to fields. For more details about how to implement a parser adapter, please refer to [this document](src/adapters//README.md).
 
 Below is an example for constructing a FishStore instance:
 
 ```cpp
 typedef fishstore::environment::QueueIoHandler handler_t;
 typedef fishstore::device::FileSystemDisk<handler_t, 1073741824LL> disk_t;
-typedef fishstore::adaptor::SIMDJsonAdaptor adaptor_t;
-using store_t = fishstore::core::FishStore<disk_t, adaptor_t>;
+typedef fishstore::adapter::SIMDJsonAdapter adapter_t;
+using store_t = fishstore::core::FishStore<disk_t, adapter_t>;
 
 // FishStore constructor:
 // FishStore(size_t hash_table_size, size_t in_mem_buffer_size, const std::string& store_dst);

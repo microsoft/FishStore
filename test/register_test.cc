@@ -7,16 +7,16 @@
 #include <experimental/filesystem>
 #include "gtest/gtest.h"
 
-#include "adaptors/simdjson_adaptor.h"
+#include "adapters/simdjson_adapter.h"
 #include <device/file_system_disk.h>
 #include "core/fishstore.h"
 
 using handler_t = fishstore::environment::QueueIoHandler;
 
 using namespace fishstore::core;
-using adaptor_t = fishstore::adaptor::SIMDJsonAdaptor;
+using adapter_t = fishstore::adapter::SIMDJsonAdapter;
 using disk_t = fishstore::device::FileSystemDisk<handler_t, 33554432L>;
-using store_t = FishStore<disk_t, adaptor_t>;
+using store_t = FishStore<disk_t, adapter_t>;
 
 const size_t n_records = 1500000;
 const size_t n_threads = 4;
@@ -96,7 +96,7 @@ private:
 class JsonFullScanContext : public IAsyncContext {
 public:
   JsonFullScanContext(const std::vector<std::string>& field_names,
-    const general_psf_t<adaptor_t>& pred, const char* value)
+    const general_psf_t<adapter_t>& pred, const char* value)
     : eval_{ pred },
     cnt{ new uint32_t{0} },
     value_{ value },
@@ -138,11 +138,11 @@ public:
   inline bool check(const char* payload, uint32_t payload_size) {
     parser.Load(payload, payload_size);
     auto& record = parser.NextRecord();
-    tsl::hopscotch_map<uint16_t, typename adaptor_t::field_t> field_map(field_names.size());
+    tsl::hopscotch_map<uint16_t, typename adapter_t::field_t> field_map(field_names.size());
     for (auto& field : record.GetFields()) {
       field_map.emplace(static_cast<int16_t>(field.FieldId()), field);
     }
-    std::vector<adaptor_t::field_t> args;
+    std::vector<adapter_t::field_t> args;
     args.reserve(field_names.size());
     for (uint16_t i = 0; i < field_names.size(); ++i) {
       auto it = field_map.find(i);
@@ -162,9 +162,9 @@ protected:
   }
 
 private:
-  adaptor_t::parser_t parser;
+  adapter_t::parser_t parser;
   std::vector<std::string> field_names;
-  general_psf_t<adaptor_t> eval_;
+  general_psf_t<adapter_t> eval_;
   uint32_t* cnt;
   uint32_t value_size_;
   const char* value_;
@@ -221,7 +221,7 @@ TEST(Registration, Register_Concurrent) {
   ASSERT_EQ(res, Status::Pending);
   store.CompletePending(true);
 
-  JsonFullScanContext context2{ {"school.id"}, fishstore::core::projection<adaptor_t>, "1" };
+  JsonFullScanContext context2{ {"school.id"}, fishstore::core::projection<adapter_t>, "1" };
   res = store.FullScan(context2, callback, 0, safe_register_address);
   ASSERT_EQ(res, Status::Pending);
   store.CompletePending(true);
@@ -298,7 +298,7 @@ TEST(Registration, Deregister_Concurrent) {
   ASSERT_EQ(res, Status::Pending);
   store.CompletePending(true);
 
-  JsonFullScanContext context2{ {"school.id"}, fishstore::core::projection<adaptor_t>, "1" };
+  JsonFullScanContext context2{ {"school.id"}, fishstore::core::projection<adapter_t>, "1" };
   res = store.FullScan(context2, callback, 0, 0, safe_unregister_address);
   ASSERT_EQ(res, Status::Pending);
   store.CompletePending(true);

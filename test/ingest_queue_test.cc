@@ -7,7 +7,7 @@
 #include <experimental/filesystem>
 #include "gtest/gtest.h"
 
-#include "adaptors/simdjson_adaptor.h"
+#include "adapters/simdjson_adapter.h"
 #include <device/file_system_disk.h>
 
 using handler_t = fishstore::environment::QueueIoHandler;

@@ -9,13 +9,13 @@
 #else
 #define LIBEXPORT_MACROS extern "C"
 #endif
-#include "adaptors/simdjson_adaptor.h"
+#include "adapters/simdjson_adapter.h"
 #include "core/psf.h"
 
-typedef fishstore::adaptor::SIMDJsonAdaptor adaptor_t;
+typedef fishstore::adapter::SIMDJsonAdapter adapter_t;
 using namespace fishstore::core;
 
-LIBEXPORT_MACROS NullableInt jp_high_follower(std::vector<adaptor_t::field_t>& fields) {
+LIBEXPORT_MACROS NullableInt jp_high_follower(std::vector<adapter_t::field_t>& fields) {
   auto user_lang = fields[0].GetAsStringRef();
   auto follower_count = fields[1].GetAsLong();
   if(user_lang.HasValue() && follower_count.HasValue() &&
@@ -25,7 +25,7 @@ LIBEXPORT_MACROS NullableInt jp_high_follower(std::vector<adaptor_t::field_t>& f
 }
 
 LIBEXPORT_MACROS NullableInt sensitive_reply_to_trump(
-  const std::vector<adaptor_t::field_t>& fields) {
+  const std::vector<adapter_t::field_t>& fields) {
   auto screen_name = fields[0].GetAsStringRef();
   auto sensitive = fields[1].GetAsBool();
   if(screen_name.HasValue() && strcmp(screen_name.Value().Data(), "realDonaldTrump") == 0 &&

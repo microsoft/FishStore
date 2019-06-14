@@ -5,7 +5,7 @@
 #include <cstdint>
 
 namespace fishstore {
-namespace adaptor {
+namespace adapter {
 
 class StringRef {
 public:
