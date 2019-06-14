@@ -199,7 +199,7 @@ private:
   bool has_next;
 };
 
-class SIMDJsonAdaptor: public JsonAdaptor {
+class SIMDJsonAdaptor {
 public:
   typedef SIMDJsonParser parser_t;
   typedef SIMDJsonField field_t;
