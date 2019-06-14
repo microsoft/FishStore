@@ -203,6 +203,7 @@ class SIMDJsonAdaptor: public JsonAdaptor {
 public:
   typedef SIMDJsonParser parser_t;
   typedef SIMDJsonField field_t;
+  typedef SIMDJsonRecord record_t;
 
   inline static parser_t* NewParser(const std::vector<std::string>& fields) {
     return new parser_t{ fields };
@@ -217,7 +218,7 @@ public:
     return parser->HasNext();
   }
 
-  inline static const SIMDJsonRecord& NextRecord(parser_t* const parser) {
+  inline static const record_t& NextRecord(parser_t* const parser) {
     return parser->NextRecord();
   }
 };

@@ -25,7 +25,7 @@ fishstore::core::FishStore<class disk_t, class adaptor_t>;
 
 - `fishstore::device::FileSystemDisk<class handler_t, uint64_t size>` will persist all data to a folder in the file system. Template argument `handler_t` indicates what I/O handler FishStore uses: we currently support a queue I/O handler for Linux/Windows, and a threadPool I/O handler for Windows. Tempalte argument `size` is the number of bytes FishStore will bundled in each log file.
 
-`adaptor_t` specifies which parser adaptor FishStore will use. A parser adaptor helps FishStore work with a specific parser so as to parse raw input text to fields. For more details about how to implement a parser adaptor, please refer to [this document](examples/adaptor_examples/README.md).
+`adaptor_t` specifies which parser adaptor FishStore will use. A parser adaptor helps FishStore work with a specific parser so as to parse raw input text to fields. For more details about how to implement a parser adaptor, please refer to [this document](src/adaptors//README.md).
 
 Below is an example for constructing a FishStore instance:
 
