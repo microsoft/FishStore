@@ -197,7 +197,7 @@ class FishStore {
   typedef AsyncPendingScanContext async_pending_scan_context_t;
   typedef AsyncPendingFullScanContext async_pending_full_scan_context_t;
 
-  FishStore(uint64_t table_size, uint64_t log_size, const std::string& filename, uint16_t field_cnt = 0)
+  FishStore(uint64_t table_size, uint64_t log_size, const std::string& filename)
     : min_table_size_{ table_size }
     , disk{ filename, epoch_ }
     , hlog{ log_size, epoch_, disk, disk.log() }
@@ -215,23 +215,10 @@ class FishStore {
     state_[0].Initialize(table_size, disk.log().alignment());
     overflow_buckets_allocator_[0].Initialize(disk.log().alignment(), epoch_);
 
-    // Initialize naming service and register `$x` names for CSV.
     field_lookup_map.clear();
     field_names.clear();
     inline_psf_map.clear();
     general_psf_map.clear();
-    if(std::is_base_of<adaptor::JsonAdaptor, A>::value) {
-      assert(field_cnt == 0);
-    } else if(std::is_base_of<adaptor::CsvAdaptor, A>::value) {
-      assert(field_cnt > 0);
-      /// Initialize original names for CSV.
-      std::string buf;
-      for(uint16_t i = 0; i < field_cnt; ++i) {
-        buf = "$" + std::to_string(i);
-        field_names.push_back(buf);
-        field_lookup_map.emplace(std::make_pair(buf, i));
-      }
-    }
   }
 
   // No copy constructor.
@@ -293,9 +280,6 @@ class FishStore {
 #endif
     return libs.at(lib_id).handle;
   }
-
-  // Helper function for CSV header, i.e., field_id -> string aliasing
-  void RegisterHeader(const std::vector<std::string>& header);
 
 
   /// Checkpoint/recovery operations.
@@ -3766,13 +3750,10 @@ uint16_t FishStore<D, A>::AcquireFieldID(const std::string& field) {
   auto it = field_lookup_map.find(field);
   if(it != field_lookup_map.end()) {
     field_id = it->second;
-  } else if(std::is_base_of<adaptor::JsonAdaptor, A>::value) {
+  } else {
     field_id = static_cast<uint16_t>(field_names.size());
     field_names.push_back(field);
     field_lookup_map[field] = field_id;
-  } else {
-    printf("Field not reconginzed!!!\n");
-    return -1;
   }
   return field_id;
 }
@@ -3825,14 +3806,11 @@ uint32_t FishStore<D, A>::MakeInlinePSF(const std::vector<std::string>& fields,
     auto it = field_lookup_map.find(field);
     if(it != field_lookup_map.end()) {
       field_id = it->second;
-    } else if(std::is_base_of<adaptor::JsonAdaptor, A>::value) {
+    } else {
       // You may register a field on the fly during making predicates in json.
       field_id = static_cast<uint16_t>(field_names.size());
       field_names.push_back(field);
       field_lookup_map[field] = field_id;
-    } else {
-      printf("Predicate registered failed! Field not reconginze!!\n");
-      return -1;
     }
     psf.fields.push_back(field_id);
   }
@@ -3858,14 +3836,11 @@ uint16_t FishStore<D, A>::MakeProjection(const std::string& field) {
   auto it = field_lookup_map.find(field);
   if (it != field_lookup_map.end()) {
 	  field_id = it->second;
-  } else if (std::is_base_of<adaptor::JsonAdaptor, A>::value) {
+  } else {
 	  // You may register a field on the fly during making predicates in json.
 	  field_id = static_cast<uint16_t>(field_names.size());
 	  field_names.push_back(field);
 	  field_lookup_map[field] = field_id;
-  } else {
-	  printf("Predicate registered failed! Field not reconginze!!\n");
-	  return -1;
   }
   psf.fields.push_back(field_id);
 
@@ -3907,15 +3882,12 @@ uint16_t FishStore<D, A>::MakeGeneralPSF(const std::vector<std::string>& fields,
     auto it = field_lookup_map.find(field);
     if(it != field_lookup_map.end()) {
       field_id = it->second;
-    } else if(std::is_base_of<adaptor::JsonAdaptor, A>::value) {
+    } else {
       // You may register a field on the fly during making predicates in json.
       field_id = static_cast<uint16_t>(field_names.size());
       field_names.push_back(field);
       field_lookup_map[field] = field_id;
-    } else {
-      printf("Predicate registered failed! Field not reconginze!!\n");
-      return -1;
-    }
+    } 
     psf.fields.push_back(field_id);
   }
 
@@ -3926,23 +3898,6 @@ uint16_t FishStore<D, A>::MakeGeneralPSF(const std::vector<std::string>& fields,
   }
   general_psf_map.push_back(psf);
   return static_cast<uint16_t>(general_psf_id);
-}
-
-template <class D, class A>
-void FishStore<D, A>::RegisterHeader(const std::vector<std::string>& header) {
-  // Naming service: register the header of a CSV data. Thus, we can assign the
-  // field ID for each field name.
-  if(std::is_base_of<adaptor::JsonAdaptor, A>::value) {
-    fprintf(stderr, "Register Header does not work with Json.\n");
-    return;
-  }
-  std::lock_guard<std::mutex> lk(mutex);
-  if(header.size() != field_names.size()) {
-    fprintf(stderr, "Header size does not align with that of fishstore");
-  } else {
-    for(size_t i = 0; i < header.size(); ++i)
-      field_lookup_map[header[i]] = static_cast<uint16_t>(i);
-  }
 }
 
 template <class D, class A>
