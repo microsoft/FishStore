@@ -25,7 +25,9 @@ fishstore::core::FishStore<class disk_t, class adapter_t>;
 
 - `fishstore::device::FileSystemDisk<class handler_t, uint64_t size>` will persist all data to a folder in the file system. Template argument `handler_t` indicates what I/O handler FishStore uses: we currently support a queue I/O handler for Linux/Windows, and a threadPool I/O handler for Windows. Tempalte argument `size` is the number of bytes FishStore will bundled in each log file.
 
-`adapter_t` specifies which parser adapter FishStore will use. A parser adapter helps FishStore work with a specific parser so as to parse raw input text to fields. For more details about how to implement a parser adapter, please refer to [this document](src/adapters//README.md).
+`adapter_t` specifies which parser adapter FishStore will use. A parser adapter helps FishStore work with a specific parser so as to parse raw input text to fields. For more details about how to implement a parser adapter, please refer to [this document](src/adapters/README.md).
+
+**In our current implementation, we provide a parser adapter based on [simdjson](https://github.com/lemire/simdjson) to handle general JSON ingestion. However, it is not perfect. We list known limitations [here](src/adapters/README.md#Example)**
 
 Below is an example for constructing a FishStore instance:
 
@@ -40,7 +42,7 @@ using store_t = fishstore::core::FishStore<disk_t, adapter_t>;
 store_t store {1LL << 24, 1LL << 31, "fishstore_data"};
 ```
 
-It constructs a FishStore instance which has an initial hash table size of 2<sup>24</sup> hash entries, 2GB of in-memory buffer, and persisting data to the directory `"fishstore_data"` using a queue I/O handler and bundling each 1GB of persisted data into a file.
+It constructs a FishStore instance which has an initial hash table size of 2<sup>24</sup> hash entries, 2GB of in-memory buffer, using simdjson for parsing, and persisting data to the directory `"fishstore_data"` using a queue I/O handler and bundling each 1GB of persisted data into a file.
 
 Once the FishStore instance is constructed, the user can use the following interfaces to start or stop a session on a thread:
 

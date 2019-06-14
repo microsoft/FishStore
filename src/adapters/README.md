@@ -7,7 +7,7 @@ using store_t = fishstore::core::FishStore<FooAdapter, disk_t>;
 ```
 
 # General Parser Interface
-[parser_api.h](parser_api.h) provides a general parser interface which extension developer should comply on. Generally speaking, a parser should be able to construct with a given list of field names, parse a batch of documents (or a single document) returning an interator to iterate through all the records and all required fields. For each parsed field, user should be able to get the value in its corresponding format through interfaces like `GetAsInt()` or `GetAsDouble()`. Such functions return values in `NullableInt` and `NullableDouble` defined under `fishstore::adapter` scope.
+[`parser_api.h`](parser_api.h) provides a general parser interface which extension developer should comply on. Generally speaking, a parser should be able to construct with a given list of field names, parse a batch of documents (or a single document) returning an interator to iterate through all the records and all required fields. For each parsed field, user should be able to get the value in its corresponding format through interfaces like `GetAsInt()` or `GetAsDouble()`. Such functions return values in `NullableInt` and `NullableDouble` defined under `fishstore::adapter` scope.
 
 **Note that `NullableInt` and `NullableStringRef` defined under `fishstore::core` scope has different interfaces thatn that in `fishstore::adapter`. Please do not be confused with them.**
 
@@ -33,3 +33,8 @@ User should explicitly define the parser type in `parser_t`, parsed field type i
 
 # Example
 [simdjson_adapter.h](simdjson_adapter.h) provides a full encapsulation of [simdjson](https://github.com/lemire/simdjson) to comply FishStore parser interface and corresponding parser adapter.
+
+There are a few known limitations with simdjson parser wrapper and adapter:
+
+- Note that simdjson currently only supports parsing one JSON record at a time. Thus, users can only feed one record in raw text to `BatchInsert()` at a time. As a result, user need to implement their own logic to delimit record boundaries within a batch in application level.
+- `SIMDJsonParser` and `SIMDJsonAdapter` only supports object-based field names (e.g., `actor.id`, `payload.action.type`). Arrays (like `a[0].b`) and wildcards `a.*.b` are not supported.
