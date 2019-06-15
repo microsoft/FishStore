@@ -10,7 +10,10 @@ its goals, FishStore leverages and extends the FASTER hash key-value store, and 
 parser interface for fast parsing (we use [simdjson](https://github.com/lemire/simdjson) in many of 
 our examples).
 
-You can read more about the concepts behind FishStore in our recent [research paper](https://badrish.net/papers/fishstore-sigmod19.pdf).
+FishStore is being open-sourced as a research prototype. You can read more about the concepts behind 
+FishStore in our recent [research paper](https://badrish.net/papers/fishstore-sigmod19.pdf). Note that
+the research paper uses Mison as its parser, whereas this release provides a generic parser interface 
+model, with simdjson as an out-of-the-box example.
 
 For detailed usage of FishStore, please refer to [our tutorial](tutorial.md).
 
