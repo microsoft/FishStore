@@ -46,9 +46,9 @@ jobs:
   
   - script: |
       export CXX='g++-7'
-      mkdir -p build/Debug build/Release
+      mkdir -p build/Release
       cd build/Release
-      cmake -DCMAKE_BUILD_TYPE=Release ..
+      cmake -DCMAKE_BUILD_TYPE=Release ../..
       make -j
       ./in_memory_test
       ./ingest_queue_test
