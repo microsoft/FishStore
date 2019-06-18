@@ -1,7 +1,3 @@
-steps:
-- checkout: self  # self represents the repo where the initial Pipelines YAML file was found
-  submodules: recursive
-
 jobs:
 - job: 'cppWindows'  
   pool:
@@ -16,6 +12,8 @@ jobs:
         buildConfiguration: 'Release'
   
   steps:
+  - checkout: self
+    submodules: recursive
   - task: CMake@1
     displayName: 'CMake .. -G "Visual Studio 15 2017 Win64"'
     inputs:
@@ -38,6 +36,8 @@ jobs:
   displayName: 'C++ (Linux)'
   
   steps:
+  - checkout: self
+    submodules: recursive
   - script: |
       sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
       sudo apt update
