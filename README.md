@@ -1,3 +1,5 @@
+[![Build Status](https://dev.azure.com/ms/FishStore/_apis/build/status/microsoft.FishStore?branchName=master)](https://dev.azure.com/ms/FishStore/_build/latest?definitionId=160&branchName=master)
+
 # Introduction
 
 FishStore is a new ingestion and storage layer for flexible- and fixed-schema datasets. It allows you 
