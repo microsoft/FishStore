@@ -4,7 +4,7 @@ jobs:
     vmImage: vs2017-win2016    
   displayName: 'C++ (Windows)'
 
-  strategy:
+  strategy::
     maxParallel: 2
     matrix:
       x64-Release:
@@ -27,12 +27,7 @@ jobs:
       msbuildArguments: '/m /p:Configuration=$(buildConfiguration) /p:Platform=$(buildPlatform)'
 
   - script: |
-      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R in_memory_test
-      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R ingest_queue_test
-      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R ingest_threadpool_test
-      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R register_test
-      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R checkpoint_queue_test
-      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R checkpoint_threadpool_test
+      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R .*_test
     workingDirectory: 'build'
     displayName: 'Run Ctest'
 
@@ -52,12 +47,15 @@ jobs:
   
   - script: |
       export CXX='g++-7'
-      mkdir -p build/Release
-      cd build/Release
-      cmake -DCMAKE_BUILD_TYPE=Release ../..
-      make -j
-      ./in_memory_test
-      ./ingest_queue_test
-      ./register_test
-      ./checkpoint_queue_test
-    displayName: 'Compile and Test'
+      mkdir -p build
+      cd build
+      cmake -DCMAKE_BUILD_TYPE=Release ..
+    displayName: 'CMake Release Profile'
+  
+  - script: 'make -j'
+    displayName: 'Compile'
+    workingDirectory: 'build'
+ 
+  - script:  'ctest -j 1 --interactive-debug-mode 0 --output-on-failure -R .*_test'
+    displayName: 'Run Tests'
+    workingDirectory: 'build'
