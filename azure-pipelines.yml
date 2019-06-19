@@ -26,9 +26,10 @@ jobs:
       solution: 'build/FishStore.sln'
       msbuildArguments: '/m /p:Configuration=$(buildConfiguration) /p:Platform=$(buildPlatform)'
 
-  - script: 'ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration)'
-    workingDirectory: 'build'
-    displayName: 'Run Ctest'
+  - task: VSTest@2
+  inputs:
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
 
 - job: 'cppLinux'
   pool:
