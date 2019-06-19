@@ -1,7 +1,7 @@
 jobs:
 - job: 'cppWindows'  
   pool:
-    vmImage: windows-2019    
+    vmImage: vs2017-win2016    
   displayName: 'C++ (Windows)'
 
   strategy:
@@ -15,10 +15,10 @@ jobs:
   - checkout: self
     submodules: recursive
   - task: CMake@1
-    displayName: 'CMake .. -G "Visual Studio 16 2019"'
+    displayName: 'CMake .. -G "Visual Studio 15 2017 Win64"'
     inputs:
       workingDirectory: 'build'
-      cmakeArgs: '.. -G "Visual Studio 16 2019"'
+      cmakeArgs: '.. -G "Visual Studio 15 2017 Win64"'
 
   - task: MSBuild@1
     displayName: 'Build solution build/FishStore.sln'
@@ -26,10 +26,15 @@ jobs:
       solution: 'build/FishStore.sln'
       msbuildArguments: '/m /p:Configuration=$(buildConfiguration) /p:Platform=$(buildPlatform)'
 
-  - task: VSTest@2
-    inputs:
-      platform: '$(buildPlatform)'
-      configuration: '$(buildConfiguration)'
+  - script: |
+      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R in_memory_test
+      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R ingest_queue_test
+      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R ingest_threadpool_test
+      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R register_test
+      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R checkpoint_queue_test
+      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R checkpoint_threadpool_test
+    workingDirectory: 'build'
+    displayName: 'Run Ctest'
 
 - job: 'cppLinux'
   pool:
