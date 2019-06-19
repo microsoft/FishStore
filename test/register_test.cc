@@ -218,12 +218,10 @@ TEST(Registration, Register_Concurrent) {
 
   JsonGeneralScanContext context1{school_id_proj, "1"};
   auto res = store.Scan(context1, callback, 0, safe_register_address);
-  ASSERT_EQ(res, Status::Pending);
   store.CompletePending(true);
 
   JsonFullScanContext context2{ {"school.id"}, fishstore::core::projection<adapter_t>, "1" };
   res = store.FullScan(context2, callback, 0, safe_register_address);
-  ASSERT_EQ(res, Status::Pending);
   store.CompletePending(true);
 
   ASSERT_EQ(context1.get_cnt(), context2.get_cnt());
@@ -295,12 +293,10 @@ TEST(Registration, Deregister_Concurrent) {
 
   JsonGeneralScanContext context1{ school_id_proj, "1" };
   auto res = store.Scan(context1, callback, 0, 0, safe_unregister_address);
-  ASSERT_EQ(res, Status::Pending);
   store.CompletePending(true);
 
   JsonFullScanContext context2{ {"school.id"}, fishstore::core::projection<adapter_t>, "1" };
   res = store.FullScan(context2, callback, 0, 0, safe_unregister_address);
-  ASSERT_EQ(res, Status::Pending);
   store.CompletePending(true);
 
   ASSERT_EQ(context1.get_cnt(), context2.get_cnt());

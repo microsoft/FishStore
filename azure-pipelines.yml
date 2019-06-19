@@ -26,7 +26,8 @@ jobs:
       solution: 'build/FishStore.sln'
       msbuildArguments: '/m /p:Configuration=$(buildConfiguration) /p:Platform=$(buildPlatform)'
 
-  - script: 'ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration)'
+  - script: |
+      ctest -j 1 --interactive-debug-mode 0 --output-on-failure -C $(buildConfiguration) -R .*_test
     workingDirectory: 'build'
     displayName: 'Run Ctest'
 
@@ -46,12 +47,15 @@ jobs:
   
   - script: |
       export CXX='g++-7'
-      mkdir -p build/Release
-      cd build/Release
-      cmake -DCMAKE_BUILD_TYPE=Release ../..
-      make -j
-      ./in_memory_test
-      ./ingest_queue_test
-      ./register_test
-      ./checkpoint_queue_test
-    displayName: 'Compile and Test'
+      mkdir -p build
+      cd build
+      cmake -DCMAKE_BUILD_TYPE=Release ..
+    displayName: 'CMake Release Profile'
+  
+  - script: 'make -j'
+    displayName: 'Compile'
+    workingDirectory: 'build'
+ 
+  - script:  'ctest -j 1 --interactive-debug-mode 0 --output-on-failure -R .*_test'
+    displayName: 'Run Tests'
+    workingDirectory: 'build'
