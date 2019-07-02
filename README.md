@@ -8,13 +8,12 @@ Such predicates are called PSFs (for predicated subset functions).
 
 FishStore performs partial parsing of the ingested data (based on active PSFs) in a fast, parallel, and 
 micro-batched manner, and hash indexes records for subsequent fast PSF-based retrieval. To accomplish 
-its goals, FishStore leverages and extends the FASTER hash key-value store, and uses an unmodified 
-parser interface for fast parsing (we use [simdjson](https://github.com/lemire/simdjson) in many of 
-our examples).
+its goals, FishStore leverages and extends the [FASTER](https://github.com/microsoft/FASTER) hash 
+key-value store, and uses an unmodified parser interface for fast parsing (we use 
+[simdjson](https://github.com/lemire/simdjson) in many of our examples).
 
-FishStore is being open-sourced as a research prototype. You can read more about the concepts behind 
-FishStore in our recent [research paper](https://badrish.net/papers/fishstore-sigmod19.pdf). Note that
-the research paper uses Mison as its parser, whereas this release provides a generic parser interface 
+FishStore is being open-sourced as a research prototype, by researchers from Microsoft Research and the
+University of Utah. You can read more about the concepts behind FishStore in the SIGMOD 2019 [research paper](https://badrish.net/papers/fishstore-sigmod19.pdf). Note that the research paper uses [Mison](http://www.vldb.org/pvldb/vol10/p1118-li.pdf) as its parser, whereas this open-source release of FishStore provides a generic parser interface 
 model, with simdjson as an out-of-the-box example.
 
 For detailed usage of FishStore, please refer to [our tutorial](tutorial.md).
