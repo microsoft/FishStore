@@ -3962,16 +3962,17 @@ uint64_t FishStore<D, A>::ApplyParserShift(
   ps_.actions = actions;
   ps_.callback = callback;
   epoch_.ResetPhaseFinished();
-
+  
+  // safe unregister address is the tail address before the first session move
+  // out of the old parser state.
+  uint64_t safe_unregister_address = hlog.GetTailAddress().control();
+	
   // Apply the parser change to the backup parser state, then change system
   // parser state to the original backup.
   int8_t next_parser_no = 1 - system_parser_no_;
   ParserStateApplyActions(parser_states[next_parser_no], actions);
   system_parser_no_ = next_parser_no;
 
-  // safe unregister address is the tail address before the first session move
-  // out of the old parser state.
-  uint64_t safe_unregister_address = hlog.GetTailAddress().control();
   // Ready to start shifting, change system state to PS_PENDING.
   system_state_.store(
     SystemState{Action::ParserShift, Phase::PS_PENDING, expected.version});
