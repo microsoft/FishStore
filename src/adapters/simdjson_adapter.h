@@ -8,9 +8,14 @@
 #include <cassert>
 #include <vector>
 
+#ifdef _MSC_VER
+#define NOMINMAX
+#endif
 #include <simdjson/parsedjson.h>
 #include <simdjson/jsonparser.h>
 #include "adapters/common_utils.h"
+
+using namespace simdjson;
 
 namespace fishstore {
 namespace adapter {
@@ -28,7 +33,7 @@ struct TreeNode {
 
 class SIMDJsonField {
 public:
-  SIMDJsonField(int64_t id_, const ParsedJson::iterator& it_)
+  SIMDJsonField(int64_t id_, const ParsedJson::Iterator& it_)
     : field_id(id_), iter(it_) {}
 
   inline int64_t FieldId() const {
@@ -84,7 +89,7 @@ public:
 
 private:
   int64_t field_id;
-  ParsedJson::iterator iter;
+  ParsedJson::Iterator iter;
 };
 
 class SIMDJsonRecord {
@@ -139,7 +144,7 @@ public:
       }
       else current_tree_node->children.emplace(std::make_pair(slice, new TreeNode{ field_id }));
     }
-    auto success = pj.allocateCapacity(alloc_bytes);
+    auto success = pj.allocate_capacity(alloc_bytes);
     assert(success);
     has_next = false;
   }
@@ -152,7 +157,7 @@ public:
     record.original = StringRef(buffer, length);
     record.fields.clear();
     auto ok = json_parse(buffer, length, pj);
-    if (ok != 0 || !pj.isValid()) {
+    if (ok != 0 || !pj.is_valid()) {
       printf("Parsing failed...\n");
       has_next = false;
     } else {
@@ -165,14 +170,14 @@ public:
   }
 
   inline const SIMDJsonRecord& NextRecord() {
-    ParsedJson::iterator it(pj);
+    ParsedJson::Iterator it(pj);
     Traverse(it, root, record.fields);
     has_next = false;
     return record;
   }
 
 private:
-  void Traverse(ParsedJson::iterator& it, const TreeNode* current_tree_node,
+  void Traverse(ParsedJson::Iterator& it, const TreeNode* current_tree_node,
     std::vector<SIMDJsonField>& parsed_fields) {
 
     if (current_tree_node->field_id != -1) {
