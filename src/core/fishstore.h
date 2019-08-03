@@ -1404,7 +1404,7 @@ inline OperationStatus FishStore<D, A>::InternalScan(C& pending_context,
   uint64_t latest_record_version = 0;
 
   const KeyPointer* kpt = reinterpret_cast<const KeyPointer*>(hlog.Get(address));
-  while(address >= end_addr && address >= head_address) {
+  while(address > end_addr && address >= head_address) {
     address = kpt->prev_address;
     kpt = reinterpret_cast<const KeyPointer*>(hlog.Get(address));
   }
@@ -1483,7 +1483,7 @@ inline OperationStatus FishStore<D, A>::InternalFullScan(C& pending_context,
     if(current_page < hlog.head_address.load().page()) break;
 
     // Scan the page, record by record to the end of the page or current tail.
-    while(address <= to_address) {
+    while(address < to_address) {
       record_t* record = reinterpret_cast<record_t*>(hlog.Get(address));
       if(record->header.IsNull()) {
         address += sizeof(RecordInfo);
