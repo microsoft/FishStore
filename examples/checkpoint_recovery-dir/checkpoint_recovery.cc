@@ -219,12 +219,12 @@ int main(int argc, char* argv[]) {
     store.StartSession();
 
     auto lib_id = store.LoadPSFLibrary(argv[2]);
-    auto id_proj = store.MakeProjection("id");
-    auto actor_id_proj = store.MakeProjection("actor.id");
-    auto repo_id_proj = store.MakeProjection("repo.id");
-    auto type_proj = store.MakeProjection("type");
-    auto predicate1_id = store.MakeInlinePSF({ "type", "payload.action" }, lib_id, "opened_issue");
-    auto predicate2_id = store.MakeInlinePSF({ "type", "payload.pull_request.head.repo.language" }, lib_id, "cpp_pr");
+    auto id_proj = store.MakeProjection("/id");
+    auto actor_id_proj = store.MakeProjection("/actor/id");
+    auto repo_id_proj = store.MakeProjection("/repo/id");
+    auto type_proj = store.MakeProjection("/type");
+    auto predicate1_id = store.MakeInlinePSF({ "/type", "/payload/action" }, lib_id, "opened_issue");
+    auto predicate2_id = store.MakeInlinePSF({ "/type", "/payload/pull_request/head/repo/language" }, lib_id, "cpp_pr");
 
     std::vector<ParserAction> parser_actions;
     parser_actions.push_back({ REGISTER_GENERAL_PSF, id_proj });

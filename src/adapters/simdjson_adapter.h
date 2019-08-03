@@ -20,17 +20,6 @@ using namespace simdjson;
 namespace fishstore {
 namespace adapter {
 
-struct TreeNode {
-  TreeNode(): field_id(-1) {}
-  TreeNode(int64_t id): field_id(id) {}
-  ~TreeNode() {
-    for (auto x: children) delete x.second;
-  }
-
-  int64_t field_id = -1;
-  std::unordered_map<std::string, TreeNode*> children;
-};
-
 class SIMDJsonField {
 public:
   SIMDJsonField(int64_t id_, const ParsedJson::Iterator& it_)
@@ -118,39 +107,11 @@ public:
 
 class SIMDJsonParser {
 public:
-  SIMDJsonParser(const std::vector<std::string>& field_names, const size_t alloc_bytes = 1LL << 25) {
-    root = new TreeNode{};
-    for (auto field_id = 0; field_id < field_names.size(); ++field_id) {
-      auto& field_name = field_names[field_id];
-      auto current_tree_node = root;
-      size_t start_pos = 0, pos = 0;
-      while (std::string::npos != (pos = field_name.find('.', start_pos))) {
-        auto slice = field_name.substr(start_pos, pos - start_pos);
-        auto iter = current_tree_node->children.find(slice);
-        if (iter != current_tree_node->children.end()) {
-          current_tree_node = iter->second;
-        }
-        else {
-          auto new_node = current_tree_node->children.emplace(std::make_pair(slice, new TreeNode{}));
-          current_tree_node = new_node.first->second;
-        }
-        start_pos = pos + 1;
-      }
-
-      auto slice = field_name.substr(start_pos);
-      auto iter = current_tree_node->children.find(slice);
-      if (iter != current_tree_node->children.end()) {
-        printf("Skipping field %s as seen before...\n", field_name.c_str());
-      }
-      else current_tree_node->children.emplace(std::make_pair(slice, new TreeNode{ field_id }));
-    }
+  SIMDJsonParser(const std::vector<std::string>& field_names, const size_t alloc_bytes = 1LL << 25)
+  : fields(field_names) {
     auto success = pj.allocate_capacity(alloc_bytes);
     assert(success);
     has_next = false;
-  }
-
-  ~SIMDJsonParser() {
-    delete root;
   }
 
   inline void Load(const char* buffer, size_t length) {
@@ -171,34 +132,17 @@ public:
 
   inline const SIMDJsonRecord& NextRecord() {
     ParsedJson::Iterator it(pj);
-    Traverse(it, root, record.fields);
+    for (auto field_id = 0; field_id < fields.size(); ++field_id) {
+      if (it.move_to(fields[field_id])) {
+        record.fields.emplace_back(SIMDJsonField{field_id, it});
+      }
+    }
     has_next = false;
     return record;
   }
 
 private:
-  void Traverse(ParsedJson::Iterator& it, const TreeNode* current_tree_node,
-    std::vector<SIMDJsonField>& parsed_fields) {
-
-    if (current_tree_node->field_id != -1) {
-      parsed_fields.emplace_back(SIMDJsonField(current_tree_node->field_id, it));
-    }
-    if (!current_tree_node->children.empty() && it.is_object()) {
-      if (it.down()) {
-        do {
-          std::string slice(it.get_string());
-          auto slice_iter = current_tree_node->children.find(slice);
-          it.next();
-          if (slice_iter != current_tree_node->children.end()) {
-            Traverse(it, slice_iter->second, parsed_fields);
-          }
-        } while (it.next());
-        it.up();
-      }
-    }
-  }
-
-  TreeNode* root;
+  std::vector<std::string> fields;
   ParsedJson pj;
   SIMDJsonRecord record;
   bool has_next;
