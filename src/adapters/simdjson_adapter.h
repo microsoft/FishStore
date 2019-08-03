@@ -8,6 +8,9 @@
 #include <cassert>
 #include <vector>
 
+#ifdef _MSC_VER
+#define NOMINMAX
+#endif
 #include <simdjson/parsedjson.h>
 #include <simdjson/jsonparser.h>
 #include "adapters/common_utils.h"

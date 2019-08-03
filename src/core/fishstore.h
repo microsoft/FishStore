@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <experimental/filesystem>
 #include <fstream>
+#include <limits>
 
 #include "device/file_system_disk.h"
 #include "tsl/hopscotch_map.h"
