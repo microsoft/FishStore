@@ -206,15 +206,15 @@ int main(int argc, char* argv[]) {
   store.StartSession();
 
   auto lib_id = store.LoadPSFLibrary(argv[2]);
-  auto id_proj = store.MakeProjection("id");
-  auto user_id_proj = store.MakeProjection("user.id");
-  auto reply_status_id_proj = store.MakeProjection("in_reply_to_status_id");
-  auto reply_user_id_proj = store.MakeProjection("in_reply_to_user_id");
-  auto lang_proj = store.MakeProjection("lang");
+  auto id_proj = store.MakeProjection("/id");
+  auto user_id_proj = store.MakeProjection("/user/id");
+  auto reply_status_id_proj = store.MakeProjection("/in_reply_to_status_id");
+  auto reply_user_id_proj = store.MakeProjection("/in_reply_to_user_id");
+  auto lang_proj = store.MakeProjection("/lang");
   auto predicate1_id =
-    store.MakeInlinePSF({ "user.lang", "user.followers_count" }, lib_id, "jp_high_follower");
+    store.MakeInlinePSF({ "/user/lang", "/user/followers_count" }, lib_id, "jp_high_follower");
   auto predicate2_id =
-    store.MakeInlinePSF({ "in_reply_to_screen_name", "possibly_sensitive" }, lib_id, "sensitive_reply_to_trump");
+    store.MakeInlinePSF({ "/in_reply_to_screen_name", "/possibly_sensitive" }, lib_id, "sensitive_reply_to_trump");
 
   std::vector<ParserAction> parser_actions;
   parser_actions.push_back({ REGISTER_GENERAL_PSF, id_proj });

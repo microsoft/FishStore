@@ -165,8 +165,8 @@ TEST(CLASS, Checkpoint_Concurrent) {
   {
     store_t store{ 8192, 201326592, "test" };
     store.StartSession();
-    auto id_proj = store.MakeProjection("id");
-    auto gender_proj = store.MakeProjection("gender");
+    auto id_proj = store.MakeProjection("/id");
+    auto gender_proj = store.MakeProjection("/gender");
     std::vector<ParserAction> actions;
     actions.push_back({ REGISTER_GENERAL_PSF, id_proj });
     actions.push_back({ REGISTER_GENERAL_PSF, gender_proj });
