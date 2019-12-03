@@ -4010,5 +4010,9 @@ void FishStore<D, A>::PrintRegistration() {
   }
 }
 
+std::ostream& operator << (std::ostream& out, const Status s) {
+  return out << (uint8_t)s;
+}
+
 }
 } // namespace fishstore::core
