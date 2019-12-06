@@ -40,11 +40,17 @@ Create new directory "build" off the root directory. From the new
 "build" directory, execute:
 
 ```sh
-cmake .. -G "<MSVC compiler> Win64"
+cmake .. -G "<MSVC compiler>"
 ```
 
 To see a list of supported MSVC compiler versions, just run "cmake -G". As of
-this writing, we're using Visual Studio 2017, so you would execute:
+this writing, we're using Visual Studio 2019, so you would execute:
+
+```sh
+cmake .. -G "Visual Studio 16 2019"
+```
+
+For Visual Studio 2017, you would execute:
 
 ```sh
 cmake .. -G "Visual Studio 15 2017 Win64"
