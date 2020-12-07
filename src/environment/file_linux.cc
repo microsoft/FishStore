@@ -207,7 +207,6 @@ bool UringIoHandler::TryComplete() {
     Status return_status;
     size_t byte_transferred;
     if (io_res < 0) {
-      /*
       sq_lock_.Acquire();
       struct io_uring_sqe *sqe = io_uring_get_sqe(ring_);
       assert(sqe != 0);
@@ -221,9 +220,6 @@ bool UringIoHandler::TryComplete() {
       assert(retry_res == 1);
       sq_lock_.Release();
       return false;
-      */
-      return_status = Status::IOError;
-      byte_transferred = 0;
     } else {
       return_status = Status::Ok;
       byte_transferred = io_res;
