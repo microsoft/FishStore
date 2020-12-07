@@ -317,9 +317,19 @@ class UringIoHandler {
   static void IoCompletionCallback(io_context_t ctx, struct iocb* iocb, long res, long res2);
   */
   struct IoCallbackContext {
-    IoCallbackContext(IAsyncContext* context_, AsyncIOCallback callback_)
-      : caller_context{ context_ }
+    IoCallbackContext(bool is_read, int fd, struct iovec vec, size_t offset, IAsyncContext* context_, AsyncIOCallback callback_)
+      : is_read_(is_read)
+      , fd_(fd)
+      , vec_(vec)
+      , offset_(offset)
+      , caller_context{ context_ }
       , callback{ callback_ } {}
+
+    bool is_read_;
+
+    int fd_;
+    struct iovec vec_;
+    size_t offset_;
 
     /// Caller callback context.
     IAsyncContext* caller_context;
