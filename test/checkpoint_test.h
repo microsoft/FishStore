@@ -158,8 +158,8 @@ private:
 };
 
 TEST(CLASS, Checkpoint_Concurrent) {
-  std::experimental::filesystem::remove_all("test");
-  std::experimental::filesystem::create_directories("test");
+  std::filesystem::remove_all("test");
+  std::filesystem::create_directories("test");
   std::vector<Guid> guids(n_threads);
 
   {

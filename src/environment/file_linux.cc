@@ -207,23 +207,6 @@ bool UringIoHandler::TryComplete() {
     Status return_status;
     size_t byte_transferred;
     if (io_res < 0) {
-      if (io_res == -EINTR || io_res == -EAGAIN) {
-        //Retry...
-        sq_lock_.Acquire();
-        struct io_uring_sqe *sqe = io_uring_get_sqe(ring_);
-        assert(sqe != 0);
-        if (context->is_read_) {
-          io_uring_prep_readv(sqe, context->fd_, &context->vec_, 1, context->offset_);
-        } else {
-          io_uring_prep_writev(sqe, context->fd_, &context->vec_, 1, context->offset_);
-        }
-        io_uring_sqe_set_data(sqe, context);
-
-        int retry_res = io_uring_submit(ring_);
-        assert(retry_res == 1);
-        sq_lock_.Release();
-        return false;
-      }
       return_status = Status::IOError;
       byte_transferred = 0;
     } else {

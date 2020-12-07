@@ -157,8 +157,8 @@ private:
 };
 
 TEST(CLASS, Ingest_Serial) {
-  std::experimental::filesystem::remove_all("test");
-  std::experimental::filesystem::create_directories("test");
+  std::filesystem::remove_all("test");
+  std::filesystem::create_directories("test");
   store_t store{ 8192, 201326592, "test" };
   store.StartSession();
   auto id_proj = store.MakeProjection("/id");
@@ -212,8 +212,8 @@ TEST(CLASS, Ingest_Serial) {
 }
 
 TEST(CLASS, Ingest_Concurrent) {
-  std::experimental::filesystem::remove_all("test");
-  std::experimental::filesystem::create_directories("test");
+  std::filesystem::remove_all("test");
+  std::filesystem::create_directories("test");
   {
     store_t store{ 8192, 201326592, "test" };
     store.StartSession();
@@ -282,8 +282,8 @@ TEST(CLASS, Ingest_Concurrent) {
 }
 
 TEST(CLASS, FullScan) {
-  std::experimental::filesystem::remove_all("test");
-  std::experimental::filesystem::create_directories("test");
+  std::filesystem::remove_all("test");
+  std::filesystem::create_directories("test");
   store_t store{ 8192, 201326592, "test" };
   store.StartSession();
   auto id_proj = store.MakeProjection("/id");
