@@ -207,6 +207,7 @@ bool UringIoHandler::TryComplete() {
     Status return_status;
     size_t byte_transferred;
     if (io_res < 0) {
+      // Retry if it is failed.....
       sq_lock_.Acquire();
       struct io_uring_sqe *sqe = io_uring_get_sqe(ring_);
       assert(sqe != 0);
@@ -279,21 +280,18 @@ Status UringFile::ScheduleOperation(FileOperationType operationType, uint8_t* bu
   IAsyncContext* caller_context_copy;
   RETURN_NOT_OK(context.DeepCopy(caller_context_copy));
 
-  struct iovec vec[1];
-  vec[0].iov_base = buffer;
-  vec[0].iov_len = length;
   bool is_read = operationType == FileOperationType::Read;
-  new(io_context.get()) UringIoHandler::IoCallbackContext(is_read, fd_, vec[0], offset, caller_context_copy, callback);
+  new(io_context.get()) UringIoHandler::IoCallbackContext(is_read, fd_, buffer, length, offset, caller_context_copy, callback);
 
   sq_lock_->Acquire();
   struct io_uring_sqe *sqe = io_uring_get_sqe(ring_);
   assert(sqe != 0);
 
   if (is_read) {
-    io_uring_prep_readv(sqe, fd_, vec, 1, offset);
+    io_uring_prep_readv(sqe, fd_, &io_context->vec_, 1, offset);
     //io_uring_prep_read(sqe, fd_, buffer, length, offset);
   } else {
-    io_uring_prep_writev(sqe, fd_, vec, 1, offset);
+    io_uring_prep_writev(sqe, fd_, &io_context->vec_, 1, offset);
     //io_uring_prep_write(sqe, fd_, buffer, length, offset);
   }
   io_uring_sqe_set_data(sqe, io_context.get());
