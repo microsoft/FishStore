@@ -202,20 +202,31 @@ bool UringIoHandler::TryComplete() {
   if(res == 0 && cqe) {
     int io_res = cqe->res;
     auto *context = reinterpret_cast<UringIoHandler::IoCallbackContext*>(io_uring_cqe_get_data(cqe));
-    cq_lock_.Release();
     io_uring_cqe_seen(ring_, cqe);
+    cq_lock_.Release();
     Status return_status;
     size_t byte_transferred;
     if (io_res < 0) {
-      return_status = Status::IOError;
-      byte_transferred = 0;
+      // Retry if it is failed.....
+      sq_lock_.Acquire();
+      struct io_uring_sqe *sqe = io_uring_get_sqe(ring_);
+      assert(sqe != 0);
+      if (context->is_read_) {
+        io_uring_prep_readv(sqe, context->fd_, &context->vec_, 1, context->offset_);
+      } else {
+        io_uring_prep_writev(sqe, context->fd_, &context->vec_, 1, context->offset_);
+      }
+      io_uring_sqe_set_data(sqe, context);
+      int retry_res = io_uring_submit(ring_);
+      assert(retry_res == 1);
+      sq_lock_.Release();
+      return false;
     } else {
       return_status = Status::Ok;
       byte_transferred = io_res;
     }
     context->callback(context->caller_context, return_status, byte_transferred);
     lss_allocator.Free(context);
-    //lss_allocator.Free(context->caller_context);
     return true;
   } else {
     cq_lock_.Release();
@@ -269,21 +280,18 @@ Status UringFile::ScheduleOperation(FileOperationType operationType, uint8_t* bu
   IAsyncContext* caller_context_copy;
   RETURN_NOT_OK(context.DeepCopy(caller_context_copy));
 
-  struct iovec vec[1];
-  vec[0].iov_base = buffer;
-  vec[0].iov_len = length;
   bool is_read = operationType == FileOperationType::Read;
-  new(io_context.get()) UringIoHandler::IoCallbackContext(is_read, fd_, vec[0], offset, caller_context_copy, callback);
+  new(io_context.get()) UringIoHandler::IoCallbackContext(is_read, fd_, buffer, length, offset, caller_context_copy, callback);
 
   sq_lock_->Acquire();
   struct io_uring_sqe *sqe = io_uring_get_sqe(ring_);
   assert(sqe != 0);
 
   if (is_read) {
-    io_uring_prep_readv(sqe, fd_, vec, 1, offset);
+    io_uring_prep_readv(sqe, fd_, &io_context->vec_, 1, offset);
     //io_uring_prep_read(sqe, fd_, buffer, length, offset);
   } else {
-    io_uring_prep_writev(sqe, fd_, vec, 1, offset);
+    io_uring_prep_writev(sqe, fd_, &io_context->vec_, 1, offset);
     //io_uring_prep_write(sqe, fd_, buffer, length, offset);
   }
   io_uring_sqe_set_data(sqe, io_context.get());
