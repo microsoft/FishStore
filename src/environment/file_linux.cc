@@ -9,6 +9,7 @@
 #include <libgen.h>
 #include <stdio.h>
 #include <time.h>
+#include <sys/uio.h>
 #include "file_linux.h"
 
 namespace fishstore {
@@ -273,10 +274,15 @@ Status UringFile::ScheduleOperation(FileOperationType operationType, uint8_t* bu
   struct io_uring_sqe *sqe = io_uring_get_sqe(ring_);
   assert(sqe != 0);
 
+  struct iovec vec[1];
+  vec[0].iov_base = buffer;
+  vec[0].iov_len = length;
   if (operationType == FileOperationType::Read) {
-    io_uring_prep_read(sqe, fd_, buffer, length, offset);
+    io_uring_prep_readv(sqe, fd_, vec, 1, offset);
+    //io_uring_prep_read(sqe, fd_, buffer, length, offset);
   } else {
-    io_uring_prep_write(sqe, fd_, buffer, length, offset);
+    io_uring_prep_writev(sqe, fd_, vec, 1, offset);
+    //io_uring_prep_write(sqe, fd_, buffer, length, offset);
   }
   io_uring_sqe_set_data(sqe, io_context.get());
 
