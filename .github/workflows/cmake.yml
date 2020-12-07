@@ -22,7 +22,14 @@ jobs:
       run: git submodule update --init --recursive
     
     - name: Install dependencies
-      run: sudo apt install -y g++ libaio-dev uuid-dev libtbb-dev liburing-dev
+      run: sudo apt install -y g++ libaio-dev uuid-dev libtbb-dev
+    
+    - name: Install liburing
+      run: |
+           git clone https://github.com/axboe/liburing.git
+           cd liburing
+           ./colnfigure
+           sudo make install
 
     - name: Create Build Environment
       # Some projects don't allow in-source building, so create a separate build directory
