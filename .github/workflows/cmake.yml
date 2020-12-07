@@ -28,7 +28,7 @@ jobs:
       run: |
            git clone https://github.com/axboe/liburing.git
            cd liburing
-           ./colnfigure
+           ./configure
            sudo make install
 
     - name: Create Build Environment
