@@ -26,8 +26,9 @@ jobs:
     
     - name: Install liburing
       run: |
-           git clone https://github.com/axboe/liburing.git
+           git clone https://git.kernel.dk/liburing
            cd liburing
+           git checkout liburing-0.7
            ./configure
            sudo make install
 
