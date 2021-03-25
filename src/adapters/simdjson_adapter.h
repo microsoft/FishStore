@@ -8,77 +8,88 @@
 #include <cassert>
 #include <vector>
 
-#ifdef _MSC_VER
-#define NOMINMAX
-#endif
-#include <simdjson/parsedjson.h>
-#include <simdjson/jsonparser.h>
-#include "adapters/common_utils.h"
+#include <simdjson.h>
+#include <adapters/common_utils.h>
 
-using namespace simdjson;
+const size_t DEFAULT_BATCH_SIZE = 1000000;
 
 namespace fishstore {
 namespace adapter {
 
+
 class SIMDJsonField {
 public:
-  SIMDJsonField(int64_t id_, const ParsedJson::Iterator& it_)
-    : field_id(id_), iter(it_) {}
+  SIMDJsonField(int64_t id_, const simdjson::dom::element e)
+    : field_id(id_), ele(e) {}
 
   inline int64_t FieldId() const {
     return field_id;
   }
 
   inline NullableBool GetAsBool() const {
-    switch (iter.get_type()) {
-    case 't':
-      return NullableBool(true);
-    case 'f':
-      return NullableBool(false);
-    default:
+    if (ele.is_bool()) {
+      return NullableBool(ele.get_bool().value());
+    }
+    else {
       return NullableBool();
     }
   }
 
   inline NullableInt GetAsInt() const {
-    if (iter.is_integer()) {
-      return NullableInt(static_cast<int32_t>(iter.get_integer()));
-    } else return NullableInt();
+    if (ele.is_int64()) {
+      return NullableInt(ele.get_int64().value());
+    }
+    else {
+      return NullableInt();
+    }
   }
 
   inline NullableLong GetAsLong() const {
-    if (iter.is_integer()) {
-      return NullableLong(iter.get_integer());
-    } else return NullableLong();
+    if (ele.is_int64()) {
+      return NullableLong(ele.get_int64().value());
+    }
+    else {
+      return NullableLong();
+    }
   }
 
   inline NullableFloat GetAsFloat() const {
-    if (iter.is_double()) {
-      return NullableFloat(static_cast<float>(iter.get_double()));
-    } else return NullableFloat();
+    if (ele.is_double()) {
+      return NullableFloat(ele.get_double().value());
+    }
+    else {
+      return NullableFloat();
+    }
   }
 
   inline NullableDouble GetAsDouble() const {
-    if (iter.is_double()) {
-      return NullableDouble(iter.get_double());
-    } else return NullableDouble();
+    if (ele.is_double()) {
+      return NullableDouble(ele.get_double().value());
+    }
+    else {
+      return NullableDouble();
+    }
   }
 
   inline NullableString GetAsString() const {
-    if (iter.is_string()) {
-      return NullableString(std::string(iter.get_string(), iter.get_string_length()));
-    } else return NullableString();
+    if (ele.is_string()) {
+      auto tmp = ele.get_string().value();
+      return NullableString(std::string(tmp.data(), tmp.size()));
+    }
+    else return NullableString();
   }
 
   inline NullableStringRef GetAsStringRef() const {
-    if (iter.is_string()) {
-      return NullableStringRef(StringRef(iter.get_string(), iter.get_string_length()));
-    } else return NullableStringRef();
+    if (ele.is_string()) {
+      auto tmp = ele.get_string().value();
+      return NullableStringRef({ tmp.data(), tmp.size() });
+    }
+    else return NullableStringRef();
   }
 
 private:
   int64_t field_id;
-  ParsedJson::Iterator iter;
+  const simdjson::dom::element ele;
 };
 
 class SIMDJsonRecord {
@@ -100,6 +111,12 @@ public:
     return original;
   }
 
+  inline void clear() {
+    original.ptr = NULL;
+    original.size = 0;
+    fields.clear();
+  }
+
 public:
   StringRef original;
   std::vector<SIMDJsonField> fields;
@@ -107,45 +124,41 @@ public:
 
 class SIMDJsonParser {
 public:
-  SIMDJsonParser(const std::vector<std::string>& field_names, const size_t alloc_bytes = 1LL << 25)
-  : fields(field_names) {
-    auto success = pj.allocate_capacity(alloc_bytes);
-    assert(success);
-    has_next = false;
-  }
+  SIMDJsonParser(const std::vector<std::string>& field_names)
+  : fields(field_names), parser_(), stream(), buffer_(NULL), len_(0), record_() {}
 
   inline void Load(const char* buffer, size_t length) {
-    record.original = StringRef(buffer, length);
-    record.fields.clear();
-    auto ok = json_parse(buffer, length, pj);
-    if (ok != 0 || !pj.is_valid()) {
-      printf("Parsing failed...\n");
-      has_next = false;
-    } else {
-      has_next = true;
-    }
+    //XX: buffer is not padded, may have issue
+    buffer_ = buffer;
+    len_ = length;
+    parser_.parse_many(buffer, length, DEFAULT_BATCH_SIZE).get(stream);
+    it = stream.begin();
   }
 
   inline bool HasNext() {
-    return has_next;
+    return it != stream.end();
   }
 
   inline const SIMDJsonRecord& NextRecord() {
-    ParsedJson::Iterator it(pj);
-    for (auto field_id = 0; field_id < fields.size(); ++field_id) {
-      if (it.move_to(fields[field_id])) {
-        record.fields.emplace_back(SIMDJsonField{field_id, it});
-      }
+    record_.clear();
+    record_.original.ptr = buffer_ + it.current_index();
+    auto last_index = it.current_index();   
+    for (auto& field : fields) {
+      record_.fields.emplace_back(SIMDJsonField(record_.fields.size(), (*it).at_pointer(field).value()));
     }
-    has_next = false;
-    return record;
+    ++it;
+    record_.original.size = it != stream.end() ? it.current_index() - last_index : len_ - last_index;
+    return record_;
   }
 
 private:
+  const char* buffer_;
+  size_t len_;
   std::vector<std::string> fields;
-  ParsedJson pj;
-  SIMDJsonRecord record;
-  bool has_next;
+  simdjson::dom::parser parser_;
+  simdjson::dom::document_stream stream;
+  simdjson::dom::document_stream::iterator it;
+  SIMDJsonRecord record_;
 };
 
 class SIMDJsonAdapter {
