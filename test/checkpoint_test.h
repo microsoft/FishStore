@@ -8,7 +8,7 @@ using adapter_t = fishstore::adapter::SIMDJsonAdapter;
 using disk_t = fishstore::device::FileSystemDisk<handler_t, 33554432L>;
 using store_t = FishStore<disk_t, adapter_t>;
 
-const size_t n_records = 5000000;
+const size_t n_records = 3000000;
 const size_t n_threads = 4;
 const char* pattern =
   "{\"id\": \"%zu\", \"name\": \"name%zu\", \"gender\": \"%s\", \"school\": {\"id\": \"%zu\", \"name\": \"school%zu\"}}";
@@ -207,12 +207,15 @@ TEST(CLASS, Checkpoint_Concurrent) {
       }, i);
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     store.CheckpointIndex(checkpoint_callback, index_token);
     store.CompleteAction(true);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     store.CheckpointHybridLog(hybrid_log_persistence_callback, log_token);
     store.CompleteAction(true);
+    for (auto& guid: guids) {
+      printf("%s\n", guid.ToString().c_str());
+    }
 
     for (auto& thd : thds) {
       thd.join();
@@ -237,6 +240,9 @@ TEST(CLASS, Checkpoint_Concurrent) {
   uint32_t version;
   std::vector<Guid> recovered_session_ids;
   new_store.Recover(index_token, log_token, version, recovered_session_ids);
+  for (auto& guid: recovered_session_ids) {
+    printf("%s\n", guid.ToString().c_str());
+  }
 
   new_store.StartSession();
   std::vector<std::pair<uint64_t, uint32_t>> sessions(n_threads);
