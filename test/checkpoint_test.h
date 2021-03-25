@@ -8,7 +8,7 @@ using adapter_t = fishstore::adapter::SIMDJsonAdapter;
 using disk_t = fishstore::device::FileSystemDisk<handler_t, 33554432L>;
 using store_t = FishStore<disk_t, adapter_t>;
 
-const size_t n_records = 1500000;
+const size_t n_records = 5000000;
 const size_t n_threads = 4;
 const char* pattern =
   "{\"id\": \"%zu\", \"name\": \"name%zu\", \"gender\": \"%s\", \"school\": {\"id\": \"%zu\", \"name\": \"school%zu\"}}";
@@ -207,10 +207,10 @@ TEST(CLASS, Checkpoint_Concurrent) {
       }, i);
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     store.CheckpointIndex(checkpoint_callback, index_token);
     store.CompleteAction(true);
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     store.CheckpointHybridLog(hybrid_log_persistence_callback, log_token);
     store.CompleteAction(true);
 
