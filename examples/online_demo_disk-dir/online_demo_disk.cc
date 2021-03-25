@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include <cstdio>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <fstream>
 
 #include "adapters/simdjson_adapter.h"
@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
   printf("Finish loading %u batches (%zu records) of json into the memory....\n",
     json_batch_cnt, record_cnt);
 
-  std::experimental::filesystem::create_directory(argv[4]);
+  std::filesystem::create_directory(argv[4]);
   size_t store_size = 1LL << atoi(argv[3]);
   store_t store{ (1L << 24), store_size, argv[4] };
 

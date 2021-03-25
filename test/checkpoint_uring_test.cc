@@ -10,9 +10,9 @@
 #include "adapters/simdjson_adapter.h"
 #include <device/file_system_disk.h>
 
-using handler_t = fishstore::environment::QueueIoHandler;
+using handler_t = fishstore::environment::UringIoHandler;
 
-#define CLASS CheckpointTest_Queue
+#define CLASS CheckpointTest_Uring
 #include "checkpoint_test.h"
 #undef CLASS
 

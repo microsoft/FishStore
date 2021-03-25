@@ -3,7 +3,7 @@
 
 #include <atomic>
 #include <cstdio>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <memory>
 #include <fstream>
 
@@ -209,7 +209,7 @@ int main(int argc, char* argv[]) {
     "Finish loading %u batches (%zu records) of json into the memory....\n",
     json_batch_cnt, record_cnt);
 
-  std::experimental::filesystem::create_directory(argv[5]);
+  std::filesystem::create_directory(argv[5]);
   size_t store_size = 1LL << atoi(argv[4]);
   size_t hash_table_size = 1LL << 24;
   {

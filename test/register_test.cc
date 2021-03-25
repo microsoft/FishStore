@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <experimental/filesystem>
+#include <filesystem>
 #include "gtest/gtest.h"
 
 #include "adapters/simdjson_adapter.h"
@@ -171,8 +171,8 @@ private:
 };
 
 TEST(Registration, Register_Concurrent) {
-  std::experimental::filesystem::remove_all("test");
-  std::experimental::filesystem::create_directories("test");
+  std::filesystem::remove_all("test");
+  std::filesystem::create_directories("test");
   store_t store{ 8192, 201326592, "test" };
   store.StartSession();
   auto school_id_proj = store.MakeProjection("/school/id");
@@ -239,8 +239,8 @@ TEST(Registration, Register_Concurrent) {
 }
 
 TEST(Registration, Deregister_Concurrent) {
-  std::experimental::filesystem::remove_all("test");
-  std::experimental::filesystem::create_directories("test");
+  std::filesystem::remove_all("test");
+  std::filesystem::create_directories("test");
   store_t store{ 8192, 201326592, "test" };
   store.StartSession();
   auto school_id_proj = store.MakeProjection("/school/id");

@@ -20,7 +20,7 @@ public:
     return size;
   }
 
-private:
+public:
   const char* ptr;
   size_t size;
 };
