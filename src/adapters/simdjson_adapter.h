@@ -129,7 +129,10 @@ public:
 
   inline void Load(const char* buffer, size_t length) {
     //XX: buffer is not padded, may have issue
-    buffer_ = buffer;
+    simdjson::padded_string ps(buffer, length);
+    //buffer_ = buffer;
+    //len_ = length;
+    buffer_ = ps.data();
     len_ = length;
     parser_.parse_many(buffer, length, DEFAULT_BATCH_SIZE).get(stream);
     it = stream.begin();
