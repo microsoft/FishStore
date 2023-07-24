@@ -30,3 +30,5 @@ ADD_FISHSTORE_TEST(checkpoint_queue_test "checkpoint_test.h")
 if (MSVC)
 ADD_FISHSTORE_TEST(checkpoint_threadpool_test "checkpoint_test.h")
 endif()
+
+ADD_FISHSTORE_TEST(simdjson_adapter_test "")
