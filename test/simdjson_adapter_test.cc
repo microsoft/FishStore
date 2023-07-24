@@ -21,7 +21,7 @@ TEST(SimdJsonTests, BasicTest1) {
     auto rec = parser.NextRecord();
     auto &fields = rec.GetFields();
     auto raw_text = rec.GetRawText();
-    std::string str = {raw_text.Data(), rec.GetRawText().Length()};
+    std::string str = {raw_text.Data(), raw_text.Length()};
     printf("Raw String: %s\n", str.data());
     ASSERT_EQ(fields.size(), 2);
     ASSERT_TRUE(fields[0].GetAsInt().HasValue());

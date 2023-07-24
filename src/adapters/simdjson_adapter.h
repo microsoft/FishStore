@@ -195,6 +195,7 @@ namespace fishstore {
             }
 
             inline StringRef GetRawText() const {
+                obj.reset();
                 auto ref = obj.raw_json().value();
                 return {ref.data(), ref.length()};
             }
