@@ -180,7 +180,7 @@ namespace fishstore {
                 int i = 0;
                 for (const auto &lookup: lookups) {
                     const auto value = lookup.find(obj);
-                    // check the value was found
+                    // check the value was found if not, don't add to vector
                     if (value.error() == simdjson::SUCCESS) {
                         fields.emplace_back(i, value);
                     } else {
