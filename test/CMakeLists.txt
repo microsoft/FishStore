@@ -17,7 +17,7 @@ FUNCTION(ADD_FISHSTORE_TEST TEST_NAME HEADERS)
   else()
     target_compile_options(${TEST_NAME} PRIVATE -UNDEBUG)
   endif()
-  add_test(${TEST_NAME} ${CMAKE_BINARY_DIR}/${TEST_NAME})
+  gtest_discover_tests(${TEST_NAME} ${CMAKE_BINARY_DIR}/${TEST_NAME})
 ENDFUNCTION()
 
 ADD_FISHSTORE_TEST(in_memory_test "")

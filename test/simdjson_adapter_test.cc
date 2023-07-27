@@ -20,15 +20,30 @@ TEST(SimdJsonTests, BasicTest1) {
     ASSERT_TRUE(parser.HasNext());
     auto rec = parser.NextRecord();
     auto &fields = rec.GetFields();
-    auto raw_text = rec.GetRawText();
-    std::string str = {raw_text.Data(), raw_text.Length()};
-    printf("Raw String: %s\n", str.data());
     ASSERT_EQ(fields.size(), 2);
-    ASSERT_TRUE(fields[0].GetAsInt().HasValue());
+
+    // get raw text first
+    auto raw_text = rec.GetRawText();
+    std::string raw_text_str = {raw_text.Data(), raw_text.Length()};
+
+    // verify raw text
+    const std::string correct_text = "{\"id\":3, \"school\":{\"id\":6}, \"random\":\"garbage13\"}\n";
+    ASSERT_EQ(raw_text_str, correct_text);
+
+    // check int
+    auto n = fields[0].GetAsInt();
+    ASSERT_TRUE(n.HasValue());
+    ASSERT_EQ(n.Value(), 3);
+
+    // get raw again
+    raw_text = rec.GetRawText();
+    raw_text_str = {raw_text.Data(), raw_text.Length()};
+    ASSERT_EQ(raw_text_str, correct_text);
+
 }
 
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

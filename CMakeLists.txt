@@ -37,6 +37,8 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+include(GoogleTest)
+
 ##### END GOOGLE TEST INSTALLATION #####
 
 add_subdirectory(third_party/simdjson EXCLUDE_FROM_ALL)
