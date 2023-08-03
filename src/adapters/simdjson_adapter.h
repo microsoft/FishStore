@@ -108,10 +108,9 @@ namespace fishstore {
             // creates a simdjson field from a string
             SIMDJsonFieldLookup() = default;
 
-            explicit SIMDJsonFieldLookup(const std::string &lookup_str_) : lookup_str(
-                    std::make_unique<std::string>(lookup_str_)) {
-                char *start = lookup_str->data();
-                char *end = lookup_str->data();
+            explicit SIMDJsonFieldLookup(std::string &lookup_str) {
+                char *start = lookup_str.data();
+                char *end = lookup_str.data();
                 while (true) {
                     if (*end == '.' || *end == '\0') { // end of  a field
                         size_t str_len = end - start;
@@ -160,13 +159,8 @@ namespace fishstore {
                 return ret;
             }
 
-            std::string ToString() const {
-                return *lookup_str;
-            }
-
         private:
             std::vector<SIMDJsonFieldLookupElement> lookups;
-            std::unique_ptr<std::string> lookup_str; // kept around for memory management
         };
 
         class SIMDJsonRecord {
@@ -183,8 +177,6 @@ namespace fishstore {
                     // check the value was found if not, don't add to vector
                     if (value.error() == simdjson::SUCCESS) {
                         fields.emplace_back(i, value);
-                    } else {
-                        fprintf(stderr, "FIELD NOT FOUND: [%s]\n", lookup.ToString().c_str());
                     }
                     ++i;
                 }
@@ -207,9 +199,9 @@ namespace fishstore {
 
         class SIMDJsonParser {
         public:
-            SIMDJsonParser(const std::vector<std::string> &field_names) {
+            SIMDJsonParser(std::vector<std::string> field_names_) : field_names(std::move(field_names_)) {
                 field_lookups.reserve(field_names.size());
-                for (const auto &item: field_names) {
+                for (auto &item: field_names) {
                     field_lookups.emplace_back(item);
                 }
             }
@@ -234,6 +226,7 @@ namespace fishstore {
             std::vector<SIMDJsonFieldLookup> field_lookups;
 
             // keep these around for memory safety reasons
+            std::vector<std::string> field_names;
             ondemand::parser parser;
             ondemand::document_stream docs;
             ondemand::document_stream::iterator docs_it;
