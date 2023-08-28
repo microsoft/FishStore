@@ -13,7 +13,7 @@
 #include <functional>
 #include <unordered_set>
 #include <unordered_map>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <fstream>
 #include <limits>
 
@@ -130,7 +130,7 @@ struct ParserContext {
 };
 
 struct LibraryHandle {
-  std::experimental::filesystem::path path;
+  std::filesystem::path path;
 #ifdef _WIN32
   HMODULE handle;
 #else
@@ -3570,7 +3570,7 @@ Status FishStore<D, A>::Recover(const Guid& index_token, const Guid& hybrid_log_
     std::string path;
     naming_file >> path;
     LibraryHandle lib;
-    lib.path = std::experimental::filesystem::absolute(path);
+    lib.path = std::filesystem::absolute(path);
 #ifdef _WIN32
     lib.handle = LoadLibrary(lib.path.string().c_str());
 #else
@@ -3763,7 +3763,7 @@ template <class D, class A>
 size_t FishStore<D, A>::LoadPSFLibrary(const std::string& lib_path) {
   std::lock_guard<std::mutex> lk(mutex);
   LibraryHandle lib;
-  lib.path = std::experimental::filesystem::absolute(lib_path);
+  lib.path = std::filesystem::absolute(lib_path);
 #ifdef _WIN32
   lib.handle = LoadLibrary(lib.path.string().c_str());
 #else

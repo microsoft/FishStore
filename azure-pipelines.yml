@@ -33,7 +33,7 @@ jobs:
 
 - job: 'cppLinux'
   pool:
-    vmImage: ubuntu-16.04
+    vmImage: ubuntu-20.04
   displayName: 'C++ (Linux)'
   
   steps:

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <experimental/filesystem>
+#include <filesystem>
 #include "gtest/gtest.h"
 
 #include "adapters/simdjson_adapter.h"
