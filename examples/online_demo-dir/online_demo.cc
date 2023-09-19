@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) {
   int n_threads = atoi(argv[2]);
   std::ifstream fin(argv[1]);
   std::vector<std::string> batches;
-  const uint32_t json_batch_size = 16;
+  const uint32_t json_batch_size = 8;
   uint32_t json_batch_cnt = 0;
   size_t line_cnt = 0;
   size_t record_cnt = 0;

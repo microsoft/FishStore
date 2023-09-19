@@ -27,7 +27,7 @@ namespace fishstore {
         class SIMDJsonField {
         public:
             // constructs a SimdJsonField with a given simdjson value
-            SIMDJsonField(int64_t id_, const dom::element &value_)
+            SIMDJsonField(int64_t id_, const simdjson_result <ondemand::value> &value_)
                     : field_id(id_), simd_value(value_) {}
 
             inline int64_t FieldId() const {
@@ -82,7 +82,85 @@ namespace fishstore {
 
         private:
             int64_t field_id;
-            dom::element simd_value;
+            mutable simdjson_result <ondemand::value> simd_value;
+        };
+
+        // represents the type of field that will be looked up (object or array)
+        enum class SIMDJsonFieldType {
+            OBJECT,
+            ARRAY
+        };
+
+        // represents the type of field that will be looked up and
+        // the name or index that should be looked up
+        // this is stored in a vector in SIMDJsonFieldLookup
+        struct SIMDJsonFieldLookupElement {
+            SIMDJsonFieldType type;
+            union {
+                std::string_view key_name;
+                size_t array_index;
+            };
+        };
+
+        // helper class used to look up simdjson fields
+        class SIMDJsonFieldLookup {
+        public:
+            // creates a simdjson field from a string
+            SIMDJsonFieldLookup() = default;
+
+            explicit SIMDJsonFieldLookup(std::string &lookup_str) {
+                char *start = lookup_str.data();
+                char *end = lookup_str.data();
+                while (true) {
+                    if (*end == '.' || *end == '\0') { // end of  a field
+                        size_t str_len = end - start;
+                        if (str_len == 0) {
+                            break;
+                        }
+                        std::string_view field = {start, str_len};
+                        SIMDJsonFieldLookupElement item = {.type=SIMDJsonFieldType::OBJECT, .key_name=field};
+                        lookups.push_back(item);
+
+                        if (*end == '\0') {
+                            break;
+                        }
+
+
+                        start = end + 1;
+                    } else if (*start == '[') {
+                        // strtol will move the end pointer right after the last number, so to the ']'.
+                        size_t index = std::strtol(++start, &end, 10);
+                        SIMDJsonFieldLookupElement item = {.type=SIMDJsonFieldType::ARRAY, .array_index=index};
+                        lookups.push_back(item);
+                        start = end + 1;
+                    }
+                    end++;
+                }
+            }
+
+            simdjson_result <ondemand::value> find(ondemand::object source) const {
+                auto fields_it = lookups.begin();
+
+                // always starts with an object
+                auto ret = source.find_field_unordered(fields_it->key_name);
+                fields_it++;
+
+                // iterate through the entire lookups
+                while (fields_it != lookups.end()) {
+                    // if object, or array find the correct value
+                    if (fields_it->type == SIMDJsonFieldType::OBJECT) {
+                        ret = ret.find_field_unordered(fields_it->key_name);
+                    } else if (fields_it->type == SIMDJsonFieldType::ARRAY) {
+                        ret = ret.at(fields_it->array_index);
+                    }
+                    fields_it++;
+                }
+
+                return ret;
+            }
+
+        private:
+            std::vector<SIMDJsonFieldLookupElement> lookups;
         };
 
         class SIMDJsonRecord {
@@ -91,17 +169,20 @@ namespace fishstore {
 
             SIMDJsonRecord() = default;
 
-            SIMDJsonRecord(dom::document_stream::iterator &doc, const std::vector<std::string> &lookups) {
-                auto raw_text_sv = doc.source();
-                raw_text = {raw_text_sv.data(), raw_text_sv.size()};
-                obj = *doc;
+            SIMDJsonRecord(ondemand::document_reference doc, const std::vector<SIMDJsonFieldLookup> &lookups) {
+                obj = doc.get_object();
+
+                auto ref = obj.raw_json().value();
+                raw_text = {ref.data(), ref.length()};
+                obj.reset();
+
 
                 int i = 0;
                 for (const auto &lookup: lookups) {
+                    const auto value = lookup.find(obj);
                     // check the value was found if not, don't add to vector
-                    auto simd_res = obj.at_pointer("/" + lookup);
-                    if (simd_res.error() == simdjson::SUCCESS) {
-                        fields.emplace_back(i, simd_res.value());
+                    if (value.error() == simdjson::SUCCESS) {
+                        fields.emplace_back(i, value);
                     }
                     ++i;
                 }
@@ -116,57 +197,45 @@ namespace fishstore {
             }
 
         public:
+            mutable ondemand::object obj;
             StringRef raw_text;
-            dom::element obj;
             std::vector<SIMDJsonField> fields;
         };
 
         class SIMDJsonParser {
         public:
             SIMDJsonParser(std::vector<std::string> field_names_) : field_names(std::move(field_names_)) {
+                field_lookups.reserve(field_names.size());
+                for (auto &item: field_names) {
+                    field_lookups.emplace_back(item);
+                }
             }
 
             inline void Load(const char *buffer, size_t length) {
-                if (parser.parse_many(buffer, length, DEFAULT_BATCH_SIZE).get(docs) != simdjson::SUCCESS)
+                if (parser.iterate_many(buffer, length, DEFAULT_BATCH_SIZE).get(docs) != simdjson::SUCCESS)
                     return;
-
                 docs_it = docs.begin();
-                record = SIMDJsonRecord(docs_it, field_names);
-                got_rec = false;
             }
 
             inline bool HasNext() {
-                if (got_rec) {
-                    ++docs_it;
-
-                    // if at end, then just return false
-                    if (!(docs_it != docs.end())) {
-                        got_rec = false;
-                        return false;
-                    }
-
-                    record = SIMDJsonRecord(docs_it, field_names);
-                    got_rec = false;
-                    return true;
-                }
                 return docs_it != docs.end();
             }
 
             inline const SIMDJsonRecord &NextRecord() {
                 assert(docs_it != docs.end());
-                got_rec = true;
+                record = SIMDJsonRecord(*docs_it, field_lookups);
+                ++docs_it;
                 return record;
             }
 
         private:
+            std::vector<SIMDJsonFieldLookup> field_lookups;
+
             // keep these around for memory safety reasons
-            bool got_rec = false;
             std::vector<std::string> field_names;
-
-
-            dom::parser parser;
-            dom::document_stream docs;
-            dom::document_stream::iterator docs_it;
+            ondemand::parser parser;
+            ondemand::document_stream docs;
+            ondemand::document_stream::iterator docs_it;
 
             SIMDJsonRecord record;
         };
@@ -196,4 +265,3 @@ namespace fishstore {
         };
     }
 }
-

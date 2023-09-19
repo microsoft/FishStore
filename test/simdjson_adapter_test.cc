@@ -15,7 +15,7 @@ std::string raw_json = R"XX(
 )XX";
 
 TEST(SimdJsonTests, BasicTest1) {
-    parser_t parser({"id", "school/id"});
+    parser_t parser({"id", "school.id"});
     parser.Load(raw_json.data(), raw_json.length());
 
     ASSERT_TRUE(parser.HasNext());
