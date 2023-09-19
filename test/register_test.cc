@@ -175,7 +175,7 @@ TEST(Registration, Register_Concurrent) {
   std::experimental::filesystem::create_directories("test");
   store_t store{ 8192, 201326592, "test" };
   store.StartSession();
-  auto school_id_proj = store.MakeProjection("/school/id");
+  auto school_id_proj = store.MakeProjection("school.id");
   std::vector<ParserAction> actions;
   actions.push_back({ REGISTER_GENERAL_PSF, school_id_proj });
   
@@ -220,7 +220,7 @@ TEST(Registration, Register_Concurrent) {
   auto res = store.Scan(context1, callback, 0, safe_register_address);
   store.CompletePending(true);
 
-  JsonFullScanContext context2{ {"/school/id"}, fishstore::core::projection<adapter_t>, "1" };
+  JsonFullScanContext context2{ {"school.id"}, fishstore::core::projection<adapter_t>, "1" };
   res = store.FullScan(context2, callback, 0, safe_register_address);
   store.CompletePending(true);
 
@@ -243,7 +243,7 @@ TEST(Registration, Deregister_Concurrent) {
   std::experimental::filesystem::create_directories("test");
   store_t store{ 8192, 201326592, "test" };
   store.StartSession();
-  auto school_id_proj = store.MakeProjection("/school/id");
+  auto school_id_proj = store.MakeProjection("school.id");
   std::vector<ParserAction> actions;
   actions.push_back({ REGISTER_GENERAL_PSF, school_id_proj });
   uint64_t safe_register_address, safe_unregister_address;
@@ -295,7 +295,7 @@ TEST(Registration, Deregister_Concurrent) {
   auto res = store.Scan(context1, callback, 0, 0, safe_unregister_address);
   store.CompletePending(true);
 
-  JsonFullScanContext context2{ {"/school/id"}, fishstore::core::projection<adapter_t>, "1" };
+  JsonFullScanContext context2{ {"school.id"}, fishstore::core::projection<adapter_t>, "1" };
   res = store.FullScan(context2, callback, 0, 0, safe_unregister_address);
   store.CompletePending(true);
 

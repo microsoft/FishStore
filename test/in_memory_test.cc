@@ -160,8 +160,8 @@ private:
 TEST(InMemFishStore, Ingest_Serial) {
   store_t store{ 1LL << 24, 1LL << 30, "" };
   store.StartSession();
-  auto id_proj = store.MakeProjection("/id");
-  auto gender_proj = store.MakeProjection("/gender");
+  auto id_proj = store.MakeProjection("id");
+  auto gender_proj = store.MakeProjection("gender");
   std::vector<ParserAction> actions;
   actions.push_back({ REGISTER_GENERAL_PSF, id_proj });
   actions.push_back({ REGISTER_GENERAL_PSF, gender_proj });
@@ -213,8 +213,8 @@ TEST(InMemFishStore, Ingest_Serial) {
 TEST(InMemFishStore, Ingest_Concurrent) {
   store_t store{ 1LL << 24, 1LL << 30, "" };
   store.StartSession();
-  auto id_proj = store.MakeProjection("/id");
-  auto gender_proj = store.MakeProjection("/gender");
+  auto id_proj = store.MakeProjection("id");
+  auto gender_proj = store.MakeProjection("gender");
   std::vector<ParserAction> actions;
   actions.push_back({ REGISTER_GENERAL_PSF, id_proj });
   actions.push_back({ REGISTER_GENERAL_PSF, gender_proj });
@@ -279,8 +279,8 @@ TEST(InMemFishStore, Ingest_Concurrent) {
 TEST(InMemFishStore, FullScan) {
   store_t store{ 1LL << 24, 1LL << 30, "" };
   store.StartSession();
-  auto id_proj = store.MakeProjection("/id");
-  auto gender_proj = store.MakeProjection("/gender");
+  auto id_proj = store.MakeProjection("id");
+  auto gender_proj = store.MakeProjection("gender");
   std::vector<ParserAction> actions;
   actions.push_back({ REGISTER_GENERAL_PSF, id_proj });
   actions.push_back({ REGISTER_GENERAL_PSF, gender_proj });
@@ -319,12 +319,12 @@ TEST(InMemFishStore, FullScan) {
     ASSERT_EQ(result, Status::Ok);
   };
 
-  JsonFullScanContext context1{ {"/id"}, fishstore::core::projection<adapter_t>, "1234", 1 };
+  JsonFullScanContext context1{ {"id"}, fishstore::core::projection<adapter_t>, "1234", 1 };
   auto res = store.FullScan(context1, callback, 0);
   ASSERT_EQ(res, Status::Ok);
   store.CompletePending();
 
-  JsonFullScanContext context2{ {"/gender"}, fishstore::core::projection<adapter_t>, "male", n_records / 2 };
+  JsonFullScanContext context2{ {"gender"}, fishstore::core::projection<adapter_t>, "male", n_records / 2 };
   res = store.FullScan(context2, callback, 0);
   ASSERT_EQ(res, Status::Ok);
   store.CompletePending();
